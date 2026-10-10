@@ -66,14 +66,10 @@ Each game file (e.g., `v5.definitions.ts`) includes:
 import { z } from "zod";
 
 // 1. Constants (business rules)
-export const V5_CONSTANTS = {
-  /* ... */
-} as const;
+export const V5_CONSTANTS = {/* ... */} as const;
 
 // 2. Enums (using as const pattern)
-export const V5Clan = {
-  /* ... */
-} as const;
+export const V5Clan = {/* ... */} as const;
 export const V5ClanSchema = z.enum(
   Object.values(V5Clan) as [string, ...string[]]
 );
@@ -88,9 +84,7 @@ export interface V5Data {
 }
 
 // 5. DTOs (full structures for public use)
-export const V5Dto = z.object({
-  /* ... */
-});
+export const V5Dto = z.object({/* ... */});
 export type V5Dto = z.infer<typeof V5Dto>;
 ```
 
@@ -132,9 +126,7 @@ export class Vampire5th {
 ```typescript
 import type { V5Data } from "@realm/common/character";
 
-const character: V5Data = {
-  /* ... */
-};
+const character: V5Data = {/* ... */};
 ```
 
 ## ✅ Best Practices

@@ -439,11 +439,17 @@ class Logger implements ILogger {
     // Add additional fields
     if (
       options.fields ||
-      (options.error instanceof RealmError && options.error.fields)
+      (options.error instanceof RealmError && options.error.fields) ||
+      (options.error instanceof RealmError && options.error.cause)
     ) {
       logEntry.fields = {
         ...options.fields,
         ...(options.error instanceof RealmError ? options.error.fields : {}),
+        ...(options.error instanceof RealmError && options.error.cause
+          ? {
+              "Raised by RealmError": `${options.error.name}: ${options.error.message}`,
+            }
+          : {}),
       };
     }
 

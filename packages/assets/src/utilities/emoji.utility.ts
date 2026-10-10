@@ -5,6 +5,7 @@
 
 import type { EmojiName } from "../types";
 import path from "node:path";
+import { getEmojiFilePath } from "./emoji-files.utility";
 
 /**
  * Get the package root directory.
@@ -27,13 +28,20 @@ function getPackageRoot(): string {
  * @example
  * ```typescript
  * const emojiPath = getEmojiPath('dice_v5_0_p_crit');
- * // Returns: /path/to/packages/assets/emojis/dice_v5_0_p_crit.webp
+ * // Returns: /path/to/packages/assets/emojis/dice/v5/default/primary/crit.webp
  * ```
  */
 export function getEmojiPath(
   name: EmojiName,
   extension: string = "webp"
 ): string {
+  const resolved = getEmojiFilePath(name);
+  if (resolved) {
+    if (extension && !resolved.endsWith(`.${extension}`)) {
+      return resolved.replace(/\.[^.]+$/, `.${extension}`);
+    }
+    return resolved;
+  }
   const packageRoot = getPackageRoot();
   return path.join(packageRoot, "emojis", `${name}.${extension}`);
 }

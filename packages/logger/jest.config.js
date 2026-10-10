@@ -12,18 +12,9 @@ export default {
   // Directories to search for modules
   moduleDirectories: ["node_modules", "src"],
 
-  // Transform TypeScript files using ts-jest
+  // Transform TypeScript files using @swc/jest
   transform: {
-    "^.+\\.tsx?$": [
-      "ts-jest",
-      {
-        tsconfig: {
-          outDir: "./dist",
-          esModuleInterop: true,
-          allowSyntheticDefaultImports: true,
-        },
-      },
-    ],
+    "^.+\\.(t|j)sx?$": "@swc/jest",
   },
 
   // Test file patterns

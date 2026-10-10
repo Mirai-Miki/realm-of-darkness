@@ -60,7 +60,7 @@ export abstract class Character implements ICharacter {
   }
 
   get lastUpdated(): Date {
-    return this.data.updatedAt;
+    return this.data.lastUpdated;
   }
 
   // ============================================================================
@@ -75,12 +75,12 @@ export abstract class Character implements ICharacter {
     this.data.name = value;
   }
 
-  get guildId(): Snowflake | null {
-    return this.data.guildId;
+  get chronicleId(): Snowflake | null {
+    return this.data.chronicleId;
   }
 
-  set guildId(value: Snowflake | null) {
-    this.data.guildId = value;
+  set chronicleId(value: Snowflake | null) {
+    this.data.chronicleId = value;
   }
 
   get status(): CharacterStatus {
@@ -89,6 +89,22 @@ export abstract class Character implements ICharacter {
 
   set status(value: CharacterStatus) {
     this.data.status = value;
+  }
+
+  get avatarUrl(): string | null {
+    return this.data.avatarUrl;
+  }
+
+  set avatarUrl(value: string | null) {
+    this.data.avatarUrl = value;
+  }
+
+  get themeColor(): string {
+    return this.data.themeColor;
+  }
+
+  set themeColor(value: string) {
+    this.data.themeColor = value;
   }
 
   // ============================================================================

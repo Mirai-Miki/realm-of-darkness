@@ -1,7 +1,10 @@
 import type { ICharacter5th } from "./character-5th.definitions";
 
 import { z } from "zod";
-import { Character5thDataSchema } from "./character-5th.definitions";
+import {
+  Character5thDataSchema,
+  Character5thSheetSchema,
+} from "./character-5th.definitions";
 import { Splat } from "../character.definitions";
 
 // ===========================================================================
@@ -26,9 +29,20 @@ export const HungerDataSchema = z
 // Schema for validating hunger increase/decrease amounts
 export const HungerAmountSchema = z.int().min(0).max(5);
 
+/**
+ * Vampire 5th Edition sheet schema (stored in characters.data JSONB).
+ */
+export const Vampire5thSheetSchema = Character5thSheetSchema.extend({
+  hunger: HungerDataSchema.default(1),
+});
+export type Vampire5thSheetData = z.infer<typeof Vampire5thSheetSchema>;
+
+/**
+ * Complete Vampire 5th Edition character DTO schema (Metadata + Sheet).
+ */
 export const Vampire5thDataSchema = Character5thDataSchema.extend({
   splat: z.literal(Splat.Vampire5th),
-  hunger: HungerDataSchema,
+  hunger: HungerDataSchema.default(1),
 });
 export type Vampire5thData = z.infer<typeof Vampire5thDataSchema>;
 

@@ -5,16 +5,7 @@ export default {
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
   moduleDirectories: ["node_modules", "src"],
   transform: {
-    "^.+\\.tsx?$": [
-      "ts-jest",
-      {
-        tsconfig: {
-          outDir: "./dist",
-          esModuleInterop: true,
-          allowSyntheticDefaultImports: true,
-        },
-      },
-    ],
+    "^.+\\.(t|j)sx?$": "@swc/jest",
   },
   testMatch: [
     "**/test/**/*.test.(ts|tsx|js)",

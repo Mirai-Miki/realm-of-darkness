@@ -5,12 +5,13 @@ You are an expert software engineer operating within a strict TypeScript monorep
 ## 1. Monorepo & Tooling
 
 - **Package Manager**: This workspace strictly uses `pnpm` and Turborepo. Never suggest or run `npm`, `yarn`, or `bun` commands.
-- **Legacy Code Boundary**: Completely ignore the `legacy/` directory (the old Python/Django backend and old React frontend) unless the user explicitly instructs you to port a specific feature to the new stack.
-- **Internal Imports**: Always use internal workspace package imports (e.g., `@rod/common`, `@rod/database`, `@rod/assets`) instead of relative paths traversing up to `../../packages/`.
-- **Formatting, Linting & Build Verification**: You must strictly adhere to the project's ESLint (`eslint.config.mjs`) and Prettier (`.prettierrc.json`) configurations. Before finalizing your work or declaring a task finished, you must execute the following validation tasks using the project repository's tooling:
+- **Legacy Code Boundary**: Completely ignore the `legacy/` directory (the old Python/Django backend and old React frontend). Never modify, write to, or run package managers/scripts in `legacy/` under any circumstances. Only read files within `legacy/` when explicitly instructed to research legacy behavior for porting to the modern TypeScript stack.
+- **Internal Imports**: Always use internal workspace package imports (e.g., `@realm/common`, `@realm/database`, `@realm/assets`) instead of relative paths traversing up to `../../packages/`.
+- **Formatting, Linting, Testing & Build Verification**: You must strictly adhere to the project's ESLint (`eslint.config.mjs`) and Prettier (`.prettierrc.json`) configurations. Before finalizing your work or declaring a task finished, you must execute the following validation tasks using the project repository's tooling:
   1. Run the formatter to correct any code styling (`pnpm format`).
   2. Run the workspace linter to identify and fix any remaining programmatic violations (`pnpm lint`).
-  3. Run a filtered build targeting the specific package or app you were just working on (e.g., `pnpm --filter <package-or-app-name> build`) to verify complete compile-time integrity.
+  3. Run the automated test suite targeting the specific package or app you worked on (`pnpm --filter <package-or-app-name> test`) or the workspace test suite (`pnpm test`).
+  4. Run a filtered build targeting the specific package or app you were just working on (e.g., `pnpm --filter <package-or-app-name> build`) to verify complete compile-time integrity.
 
 ## 2. TypeScript & Code Quality
 
@@ -44,3 +45,19 @@ Code must be isolated within the correct workspace boundary according to intent,
 - `packages/content`: Management schemas, data structures, and MDX collections for static text/data content.
 - `packages/assets`: Shared static graphics (images, token files, dice emojis) and automatically generated asset map type definitions.
 - `packages/events`: Inter-app communication contracts and clients designed for a Redis pub/sub messaging backend.
+
+## 5. Automated Testing Standards
+
+Every feature, repository, service, and validation schema introduced or modified across the workspace **must** be accompanied by automated tests:
+
+- **Unit Tests (`*.test.ts`)**:
+  - Test pure business logic, value objects, domain entity state mutations, and Zod validation boundary constraints.
+  - Cover both success cases and expected error states/exceptions (e.g., verifying `RealmError` or `UserError` is thrown with proper codes).
+  - Fast, isolated, and in-memory with zero external database dependencies.
+- **Feature / Integration Tests**:
+  - Test repository CRUD operations, entity hydration via domain factories (`CharacterFactory`), and data mapping between DTOs and database records.
+- **Zero Test Failure Policy**:
+  - No task may be declared finished with failing, skipped, or broken tests.
+  - All tests must run cleanly via `pnpm test` and package-filtered test scripts.
+- **DRY Schema Protection**:
+  - All schemas and types must originate from `@realm/common` as the single source of truth. Never create duplicate schemas that can cause Zod schema drift across packages.

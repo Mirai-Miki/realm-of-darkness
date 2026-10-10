@@ -14,8 +14,8 @@ import { fileURLToPath } from "node:url";
 import type { EmojiName } from "../types/emoji.types.js";
 
 // Get directory name in ES module context
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentFilename = fileURLToPath(import.meta.url);
+const currentDirname = path.dirname(currentFilename);
 
 /**
  * Supported image formats for emoji assets
@@ -60,7 +60,7 @@ function isSupportedImageFile(filename: string): boolean {
  */
 function getEmojisDir(): string {
   // Start from current file location
-  let currentDir = __dirname;
+  let currentDir = currentDirname;
 
   // Walk up the directory tree until we find package.json
   while (currentDir !== path.dirname(currentDir)) {

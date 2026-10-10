@@ -1,10 +1,30 @@
 import { z } from "zod";
 
-import { Vampire5thDataSchema } from "./5th-edition/v5.definitions";
-import { Vampire20thDataSchema } from "./20th-edition/v20.definitions";
+import { Splat } from "./character.definitions";
+import {
+  Vampire5thDataSchema,
+  Vampire5thSheetSchema,
+} from "./5th-edition/v5.definitions";
+import {
+  Vampire20thDataSchema,
+  Vampire20thSheetSchema,
+} from "./20th-edition/v20.definitions";
 
 // ============================================================================
-// Character Data Union
+// Character Sheet Data Union (Stored in PostgreSQL characters.data JSONB)
+// ============================================================================
+
+/**
+ * Polymorphic game sheet payload stored in characters.data JSONB.
+ */
+export const CharacterSheetDataSchema = z.discriminatedUnion("splat", [
+  Vampire5thSheetSchema.extend({ splat: z.literal(Splat.Vampire5th) }),
+  Vampire20thSheetSchema.extend({ splat: z.literal(Splat.Vampire20th) }),
+]);
+export type CharacterSheetData = z.infer<typeof CharacterSheetDataSchema>;
+
+// ============================================================================
+// Character Data Union (Complete DTO: Relational Metadata + Sheet Payload)
 // ============================================================================
 
 /**

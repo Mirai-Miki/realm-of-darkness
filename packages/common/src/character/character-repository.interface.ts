@@ -16,9 +16,16 @@ export interface ICharacterRepository {
   findByUser(userId: Snowflake): Promise<CharacterData[]>;
 
   /**
+   * Find all characters belonging to a chronicle.
+   */
+  findByChronicle(chronicleId: Snowflake): Promise<CharacterData[]>;
+
+  /**
    * Create a new character.
    */
-  create(input: Omit<CharacterData, "id">): Promise<CharacterData>;
+  create(
+    input: CharacterData | Omit<CharacterData, "id">
+  ): Promise<CharacterData>;
 
   /**
    * Update an existing character.

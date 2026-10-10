@@ -1,7 +1,10 @@
 import type { ICharacter20th } from "./character-20th.definitions";
 
 import { z } from "zod";
-import { Character20thDataSchema } from "./character-20th.definitions";
+import {
+  Character20thDataSchema,
+  Character20thSheetSchema,
+} from "./character-20th.definitions";
 import { Splat } from "../character.definitions";
 
 // ===========================================================================
@@ -49,6 +52,18 @@ export const MoralityDataSchema = z
   });
 export type MoralityData = z.infer<typeof MoralityDataSchema>;
 
+/**
+ * Vampire 20th Edition sheet schema (stored in characters.data JSONB).
+ */
+export const Vampire20thSheetSchema = Character20thSheetSchema.extend({
+  bloodPool: BloodTrackerDataSchema,
+  morality: MoralityDataSchema,
+});
+export type Vampire20thSheetData = z.infer<typeof Vampire20thSheetSchema>;
+
+/**
+ * Complete Vampire 20th Edition character DTO schema (Metadata + Sheet).
+ */
 export const Vampire20thDataSchema = Character20thDataSchema.extend({
   splat: z.literal(Splat.Vampire20th),
   bloodPool: BloodTrackerDataSchema,

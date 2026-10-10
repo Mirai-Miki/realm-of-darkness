@@ -124,12 +124,17 @@ export type WillpowerTracker20thData = z.infer<
   typeof WillpowerTracker20thDataSchema
 >;
 
-export const Character20thDataSchema = BaseCharacterDataSchema.extend({
+export const Character20thSheetSchema = z.object({
   health: HealthTracker20thDataSchema,
   willpower: WillpowerTracker20thDataSchema,
   attributes: Wod20AttributesDataSchema,
   skills: Wod20SkillsDataSchema,
 });
+export type Character20thSheetData = z.infer<typeof Character20thSheetSchema>;
+
+export const Character20thDataSchema = BaseCharacterDataSchema.extend(
+  Character20thSheetSchema.shape
+);
 export type Character20thData = z.infer<typeof Character20thDataSchema>;
 
 // ===========================================================================

@@ -97,12 +97,17 @@ export const DamageTracker5thDataSchema = z
   });
 export type DamageTracker5thData = z.infer<typeof DamageTracker5thDataSchema>;
 
-export const Character5thDataSchema = BaseCharacterDataSchema.extend({
+export const Character5thSheetSchema = z.object({
   health: DamageTracker5thDataSchema,
   willpower: DamageTracker5thDataSchema,
   attributes: Wod5AttributesDataSchema,
   skills: Wod5SkillsDataSchema,
 });
+export type Character5thSheetData = z.infer<typeof Character5thSheetSchema>;
+
+export const Character5thDataSchema = BaseCharacterDataSchema.extend(
+  Character5thSheetSchema.shape
+);
 export type Character5thData = z.infer<typeof Character5thDataSchema>;
 
 // ============================================================================

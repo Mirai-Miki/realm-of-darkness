@@ -45,6 +45,7 @@
   "exclude": [".agents", "node_modules", "dist"],
   "files": [],
   "references": [
+    { "path": "packages/common/tsconfig.build.json" },
     { "path": "packages/core" },
     { "path": "packages/database" },
     { "path": "packages/content" },

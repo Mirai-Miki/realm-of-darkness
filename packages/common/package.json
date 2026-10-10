@@ -14,7 +14,8 @@
     "build": "pnpm typecheck && tsup",
     "clean": "rimraf dist .turbo",
     "lint": "eslint src --ext .ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
   },
   "dependencies": {
     "tsup": "^8.5.1",

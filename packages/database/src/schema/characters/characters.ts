@@ -6,8 +6,8 @@ import {
   pgEnum,
   varchar,
   timestamp,
-  uniqueIndex,
   index,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import {
@@ -27,7 +27,6 @@ import { users } from "../users";
 import { chronicles } from "../chronicles";
 import { chronicleMembers } from "../chronicle-members";
 import { snowflake } from "../../schema.types";
-import { vampire5th } from "./vampire-5th";
 
 /**
  * Character Splat types Enum
@@ -42,10 +41,11 @@ const statusValues = Object.values(CharacterStatus) as [string, ...string[]];
 export const characterStatus = pgEnum("character_status", statusValues);
 
 /**
- * Base Character table - contains all common character data
+ * Main Characters table - Hybrid Relational + Validated JSONB document storage.
  *
- * This is the main character table that all character types inherit from.
- * Uses single-table inheritance with the 'splat' field to determine the specific type.
+ * Top-level columns store indexed identity, relation, and lookup metadata.
+ * The polymorphic `data` JSONB column stores edition/splat-specific sheet payloads
+ * validated by `@realm/common` Zod schemas.
  */
 export const characters = pgTable(
   "characters",
@@ -67,16 +67,24 @@ export const characters = pgTable(
       .notNull()
       .default(CharacterStatus.Draft),
 
+    avatarUrl: varchar({ length: 500 }),
+    themeColor: varchar({ length: 10 }).notNull().default("#000000"),
+
+    /**
+     * Polymorphic game sheet payload (attributes, skills, trackers, disciplines, etc.)
+     * Validated at application boundaries by CharacterSheetDataSchema.
+     */
+    data: jsonb().notNull(),
+
     createdAt: timestamp().defaultNow().notNull(),
     lastUpdated: timestamp().defaultNow().notNull(),
   },
   (table) => [
     index("characters_user_id_idx").on(table.userId),
     index("characters_chronicle_id_idx").on(table.chronicleId),
-    uniqueIndex("characters_user_chronicle_idx").on(
-      table.userId,
-      table.chronicleId
-    ),
+    index("characters_user_chronicle_idx").on(table.userId, table.chronicleId),
+    index("characters_splat_idx").on(table.splat),
+    index("characters_name_idx").on(table.name),
   ]
 );
 
@@ -97,8 +105,6 @@ export const charactersRelations = relations(characters, ({ one }) => ({
     fields: [characters.userId, characters.chronicleId],
     references: [chronicleMembers.userId, chronicleMembers.chronicleId],
   }),
-  // One-to-one splat relations
-  vampire5th: one(vampire5th),
 }));
 
 export type CharacterDb = InferSelectModel<typeof characters>;

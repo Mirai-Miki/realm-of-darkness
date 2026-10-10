@@ -209,7 +209,7 @@ export const Notes2Schema = z
   .max(CharacterConstraints.Notes2.MaxLength);
 
 // ============================================================================
-// Base Character DTO Schema
+// Base Character & Metadata DTO Schemas
 // ============================================================================
 
 export const ExperienceDataSchema = z
@@ -229,16 +229,29 @@ export const ExperienceDataSchema = z
   });
 export type ExperienceData = z.infer<typeof ExperienceDataSchema>;
 
-export const BaseCharacterDataSchema = z.object({
+/**
+ * Character relational metadata schema.
+ * Represents all top-level columns stored directly on the characters table.
+ */
+export const CharacterMetadataSchema = z.object({
   id: SnowflakeSchema,
   userId: SnowflakeSchema,
-  guildId: SnowflakeSchema.nullable(),
+  chronicleId: SnowflakeSchema.nullable().default(null),
   name: CharacterNameSchema,
-  status: CharacterStatusSchema,
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  splat: SplatSchema,
+  status: CharacterStatusSchema.default(CharacterStatus.Draft),
+  avatarUrl: z.string().max(500).nullable().default(null),
+  themeColor: z.string().max(10).default("#000000"),
+  createdAt: z.date().default(() => new Date()),
+  lastUpdated: z.date().default(() => new Date()),
 });
-export type BaseCharacterData = z.infer<typeof BaseCharacterDataSchema>;
+export type CharacterMetadata = z.infer<typeof CharacterMetadataSchema>;
+
+/**
+ * Base character data schema (alias of CharacterMetadataSchema for compatibility).
+ */
+export const BaseCharacterDataSchema = CharacterMetadataSchema;
+export type BaseCharacterData = CharacterMetadata;
 
 // ============================================================================
 // Entity Interfaces
@@ -260,11 +273,17 @@ export interface ICharacter {
   get name(): CharacterName;
   set name(value: CharacterName);
 
-  get guildId(): Snowflake | null;
-  set guildId(value: Snowflake | null);
+  get chronicleId(): Snowflake | null;
+  set chronicleId(value: Snowflake | null);
 
   get status(): CharacterStatus;
   set status(value: CharacterStatus);
+
+  get avatarUrl(): string | null;
+  set avatarUrl(value: string | null);
+
+  get themeColor(): string;
+  set themeColor(value: string);
 
   // Experience (value object with immutable updates)
   get experience(): IExperience;

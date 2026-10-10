@@ -5,14 +5,9 @@ export default defineConfig({
   format: ["esm"],
   target: "node20",
   bundle: true,
-  dts: {
-    compilerOptions: {
-      composite: false,
-      incremental: false,
-    },
-  },
+  dts: false,
   sourcemap: true,
-  clean: true,
+  clean: false,
   external: ["@realm/common", "drizzle-orm", "pg", "dotenv"],
   tsconfig: "./tsconfig.build.json",
 });

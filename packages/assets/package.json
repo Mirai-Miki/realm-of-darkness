@@ -25,6 +25,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "tsx": "^4.22.0"
+    "tsx": "^4.23.15"
   }
 }
