@@ -23,3 +23,8 @@ export { SystemRepository } from "./system.repository";
 
 export { CharacterRepository } from "./character.repository";
 export { ChronicleRepository } from "./chronicle.repository";
+export {
+  InteractionSessionRepository,
+  parseSessionRow,
+  DEFAULT_SESSION_TTL_MS,
+} from "./interaction-session.repository";

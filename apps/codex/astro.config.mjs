@@ -18,7 +18,7 @@ export default defineConfig({
               items: [
                 {
                   autogenerate: {
-                    directory: "../../packages/content/collections/5th/v5",
+                    directory: "5th/v5",
                   },
                 },
               ],
@@ -28,7 +28,7 @@ export default defineConfig({
               items: [
                 {
                   autogenerate: {
-                    directory: "../../packages/content/collections/5th/w5",
+                    directory: "5th/w5",
                   },
                 },
               ],
@@ -43,7 +43,7 @@ export default defineConfig({
               items: [
                 {
                   autogenerate: {
-                    directory: "../../packages/content/collections/20th/v20",
+                    directory: "20th/v20",
                   },
                 },
               ],
@@ -63,3 +63,4 @@ export default defineConfig({
     }),
   ],
 });
+

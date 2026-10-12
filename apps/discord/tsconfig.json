@@ -25,6 +25,7 @@
   "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "../../packages/common/tsconfig.build.json" },
+    { "path": "../../packages/content/tsconfig.build.json" },
     { "path": "../../packages/assets/tsconfig.build.json" },
     { "path": "../../packages/logger/tsconfig.build.json" },
     { "path": "../../packages/core/tsconfig.build.json" },

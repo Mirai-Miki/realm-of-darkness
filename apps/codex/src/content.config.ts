@@ -5,8 +5,8 @@ import { glob } from "astro/loaders";
 export const collections = {
   docs: defineCollection({
     loader: glob({
-      base: "../../packages/content/collections",
-      pattern: "**/*.{md,mdx}",
+      base: "../../packages/content/collections/mechanics",
+      pattern: "**/*.mdx",
     }),
     schema: docsSchema(),
   }),

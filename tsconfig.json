@@ -28,8 +28,10 @@
     "paths": {
       "@realm/core": ["./packages/core/src/index.ts"],
       "@realm/core/*": ["./packages/core/src/*"],
+
       "@realm/database": ["./packages/database/src/index.ts"],
       "@realm/database/*": ["./packages/database/src/*"],
+
       "@realm/content": ["./packages/content/src/index.ts"],
       "@realm/content/*": ["./packages/content/src/*"],
       "@realm/logger": ["./packages/logger/src/index.ts"],

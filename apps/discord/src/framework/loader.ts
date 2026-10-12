@@ -85,8 +85,13 @@ export class Loader {
     // Patterns match:
     // - src/features/**/something.handler.ts (legacy singular)
     // - src/features/**/something.handlers.ts (preferred plural; supports multiple handlers per file)
+    // - src/features/**/something.coordinator.ts (unified Coordinator pattern)
     // Note: We intentionally do not load .js files.
-    const patterns = ["**/*.handler.ts", "**/*.handlers.ts"];
+    const patterns = [
+      "**/*.handler.ts",
+      "**/*.handlers.ts",
+      "**/*.coordinator.ts",
+    ];
 
     const handlers = (
       await Promise.all(
@@ -202,8 +207,13 @@ export class Loader {
     // Patterns match:
     // - src/features/**/something.handler.ts (legacy singular)
     // - src/features/**/something.handlers.ts (preferred plural)
+    // - src/features/**/something.coordinator.ts (unified Coordinator pattern)
     // Note: We intentionally do not load .js files.
-    const patterns = ["**/*.handler.ts", "**/*.handlers.ts"];
+    const patterns = [
+      "**/*.handler.ts",
+      "**/*.handlers.ts",
+      "**/*.coordinator.ts",
+    ];
 
     const allHandlers = (
       await Promise.all(

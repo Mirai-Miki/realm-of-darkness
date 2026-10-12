@@ -1,0 +1,37 @@
+---
+title: "/character"
+description: "Create a new character or open the interactive sheet editor for an existing character."
+command:
+  name: character
+  description: "Create or manage a character sheet"
+  dmPermission: false
+  options:
+    - name: name
+      type: string
+      description: "The name of the character to load or create"
+      required: true
+      autocomplete: true
+      minLength: 2
+      maxLength: 50
+---
+
+# `/character` Command
+
+The `/character` command is the unified entry point for creating, viewing, and managing all of your characters across every game system in **Realm of Darkness**.
+
+## Usage
+
+```text
+/character name:<Character Name>
+```
+
+## Context-Sensitive Workflow
+
+Rather than cluttering Discord with separate slash commands for every game line or trait modification, `/character` automatically adapts based on the name you enter:
+
+1. **Existing Character (Interactive Dashboard)**:
+   - As you type in the `name` field, Discord will autocomplete from your existing characters.
+   - Selecting an existing character opens the **Interactive Character Editor** with one-click tracker adjustments (`+/- Hunger`, `+/- Willpower`), a Quick Action dropdown (e.g., _Perform Rouse Check_, _Mend Superficial Damage_), and modal popups for editing core biography traits.
+2. **New Character (Step-by-Step Creation Wizard)**:
+   - Entering a name that does not exist yet brings up a **Confirmation Prompt** first so you never accidentally create a character from a typo.
+   - Clicking **Create Character** launches a guided step-by-step creation wizard to select your game line (Splat), Clan/Tribe, and core traits.

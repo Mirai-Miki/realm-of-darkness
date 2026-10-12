@@ -11,15 +11,19 @@
     }
   },
   "scripts": {
-    "build": "pnpm typecheck && tsup",
+    "build": "tsc -p tsconfig.build.json && tsup",
     "clean": "rimraf dist .turbo",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch"
   },
+
   "dependencies": {
+    "@realm/common": "workspace:*",
     "tsup": "^8.5.1",
+    "yaml": "^2.8.2",
     "zod": "catalog:"
   }
 }
+

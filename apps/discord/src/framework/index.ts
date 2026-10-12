@@ -2,45 +2,55 @@
  * Framework Module
  *
  * This module provides the core infrastructure for the Discord bot.
- * It implements a View-First architecture where:
- * - Views define Interface Contracts (IDs + Schemas)
- * - Handlers implement the contracts
- * - The framework handles registration and routing
+ * It implements a Coordinator + Composable Render Engine architecture where:
+ * - Command manifests are loaded from MDX documentation (SSOT)
+ * - Coordinators handle commands, autocomplete, and stateless PostgreSQL session interactions
+ * - Coordinators return pure `NormalizedRenderEnvelope`s built by `RenderEngine`
+ * - `InteractionRouter` + `InteractionDispatcher` handle the single final Discord API handoff
  *
  * @module framework
  */
 
-// Base Classes
+// Base Classes & Event System
 export {
   BaseInteractionHandler,
   CommandHandler,
+  Coordinator,
   InterfaceHandler,
-} from "./entities/interaction-handlers.entity";
-
-// Event System
-export { DiscordEvent, createEvent } from "./entities/discord-event.entity";
+  DiscordEvent,
+  createEvent,
+} from "./entities";
 
 // Registry
 export { Registry, registry } from "./registry";
 
-// Router
-export { InteractionRouter } from "./interaction-router/interaction-router";
-
-// Interaction Context
+// Router, Dispatcher, Context & Middleware
 export {
+  InteractionRouter,
+  InteractionDispatcher,
+  interactionDispatcher,
   parseHandlerIdFromCustomId,
+  composeMiddleware,
   type BaseInteractionContext,
   type CommandContext,
   type InterfaceContext,
   type AutocompleteContext,
   type ContextMenuContext,
-} from "./interaction-router/interaction-context";
-
-// Middleware
-export {
-  composeMiddleware,
   type InteractionMiddleware,
-} from "./interaction-router/interaction-middleware";
+} from "./interaction-router";
+
+// Command Builder (MDX SSOT -> SlashCommandBuilder)
+export {
+  buildSlashCommandFromManifest,
+  buildSlashCommandFromMdx,
+} from "./command-builder.util";
+
+// Stateless Session Custom ID Protocol
+export {
+  encodeSessionCustomId,
+  decodeSessionCustomId,
+  type ParsedSessionCustomId,
+} from "./session-custom-id.util";
 
 // Loader
 export { Loader, loader } from "./loader";

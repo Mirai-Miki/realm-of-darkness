@@ -11,13 +11,14 @@
     }
   },
   "scripts": {
-    "build": "pnpm typecheck && tsup",
+    "build": "tsc -p tsconfig.build.json && tsup",
     "clean": "rimraf dist .turbo",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+
     "generate": "drizzle-kit generate --config=src/drizzle.config.ts",
     "migrate": "drizzle-kit migrate --config=src/drizzle.config.ts",
     "studio": "drizzle-kit studio --config=src/drizzle.config.ts",

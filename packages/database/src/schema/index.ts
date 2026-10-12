@@ -12,3 +12,4 @@ export * from "./characters/index";
 export * from "./initiative";
 export * from "./stats";
 export * from "./supporters";
+export * from "./interaction-sessions";

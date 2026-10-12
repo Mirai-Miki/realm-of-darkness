@@ -32,7 +32,10 @@ export default {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^(\\.{1,2}/.*)\\.js$": "$1",
+    "^@realm/common$": "<rootDir>/../common/src/index.ts",
+    "^@realm/common/(.*)$": "<rootDir>/../common/src/$1",
   },
+
   clearMocks: true,
   restoreMocks: true,
 };

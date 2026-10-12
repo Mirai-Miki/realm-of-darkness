@@ -8,6 +8,7 @@
       "@/*": ["./src/*"]
     }
   },
+
   "include": ["src/**/*", "tsup.config.ts"],
   "exclude": ["dist", "node_modules", "collections"],
   "references": [{ "path": "../../packages/common/tsconfig.build.json" }]

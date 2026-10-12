@@ -1,5 +1,5 @@
 import type { SlashCommandBuilder } from "discord.js";
-
+import type { NormalizedRenderEnvelope } from "../../ui";
 import type {
   AutocompleteContext,
   CommandContext,
@@ -8,13 +8,13 @@ import type {
 
 /**
  * Base class for all interaction handlers.
- * This provides the foundation for both command and interface handlers.
+ * This provides the foundation for command handlers, interface handlers, and coordinators.
  */
 export abstract class BaseInteractionHandler {
   /**
    * Unique identifier for this handler.
-   * For commands, this is the command name.
-   * For interfaces (buttons/modals), this is the custom ID prefix.
+   * For commands and coordinators, this is the command name.
+   * For standalone interfaces (buttons/modals), this is the custom ID prefix.
    */
   abstract readonly handlerId: string;
 }
@@ -32,19 +32,27 @@ export abstract class CommandHandler extends BaseInteractionHandler {
 
   /**
    * Get the handler ID from the command name.
+   *
+   * @returns The command name as the handler identifier
    */
   get handlerId(): string {
     return this.data.name;
   }
 
   /**
-   * Execute the command.
+   * Execute the command and optionally return a `NormalizedRenderEnvelope`
+   * for `InteractionRouter` + `InteractionDispatcher` to deliver to Discord.
+   *
    * @param ctx - The typed command context
+   * @returns A normalized render envelope (or `void` for legacy handlers)
    */
-  abstract execute(ctx: CommandContext): Promise<void>;
+  abstract execute(
+    ctx: CommandContext
+  ): Promise<NormalizedRenderEnvelope | void>;
 
   /**
    * Handle autocomplete interactions for the command.
+   *
    * @param ctx - The typed autocomplete context
    */
   abstract autocomplete?(ctx: AutocompleteContext): Promise<void>;
@@ -56,8 +64,38 @@ export abstract class CommandHandler extends BaseInteractionHandler {
  */
 export abstract class InterfaceHandler extends BaseInteractionHandler {
   /**
-   * Execute the handler logic.
+   * Execute the handler logic and optionally return a `NormalizedRenderEnvelope`
+   * for `InteractionRouter` + `InteractionDispatcher` to deliver to Discord.
+   *
    * @param ctx - The typed interface context
+   * @returns A normalized render envelope (or `void` for legacy handlers)
    */
-  abstract execute(ctx: InterfaceContext): Promise<void>;
+  abstract execute(
+    ctx: InterfaceContext
+  ): Promise<NormalizedRenderEnvelope | void>;
+}
+
+/**
+ * Unified Coordinator for context-sensitive Discord features.
+ *
+ * A `Coordinator` extends `CommandHandler` so it handles:
+ * 1. The initial slash command (`execute(ctx: CommandContext)`)
+ * 2. Optional slash command autocomplete (`autocomplete(ctx: AutocompleteContext)`)
+ * 3. All stateful interactive component/modal interactions (`handleInterface(ctx: InterfaceContext)`)
+ *    whose `customId` starts with `{handlerId}:{sessionId}`!
+ *
+ * Coordinators return `renderEngine.build(Recipe, props)` (`NormalizedRenderEnvelope`),
+ * allowing `InteractionRouter` + `InteractionDispatcher` to serve as the single Discord API boundary.
+ */
+export abstract class Coordinator extends CommandHandler {
+  /**
+   * Handle interactive component (Button, Select Menu) or Modal submit interactions
+   * routed to this coordinator via `{handlerId}:{sessionId}`.
+   *
+   * @param ctx - The typed interface context
+   * @returns A normalized render envelope to be delivered by `InteractionDispatcher`
+   */
+  abstract handleInterface(
+    ctx: InterfaceContext
+  ): Promise<NormalizedRenderEnvelope | void>;
 }

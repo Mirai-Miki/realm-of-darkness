@@ -1,3 +1,16 @@
+import { UserError } from "@realm/common";
+import { logger } from "@realm/logger";
+import { ErrorAlertRecipe, renderEngine } from "../../ui";
+import {
+  CommandHandler,
+  Coordinator,
+  InterfaceHandler,
+} from "../entities/interaction-handlers.entity";
+import { registry } from "../registry";
+import { parseHandlerIdFromCustomId } from "./interaction-context";
+import { interactionDispatcher } from "./interaction-dispatcher";
+import { composeMiddleware } from "./interaction-middleware";
+import { ensureActorMiddleware } from "./middlewares/ensure-actor.middleware";
 import type {
   AutocompleteInteraction,
   BaseInteraction,
@@ -7,13 +20,6 @@ import type {
   MessageComponentInteraction,
   ModalSubmitInteraction,
 } from "discord.js";
-import { logger } from "@realm/logger";
-
-import {
-  CommandHandler,
-  InterfaceHandler,
-} from "../entities/interaction-handlers.entity";
-import { registry } from "../registry";
 import type {
   AutocompleteContext,
   BaseInteractionContext,
@@ -21,17 +27,23 @@ import type {
   ContextMenuContext,
   InterfaceContext,
 } from "./interaction-context";
-import { parseHandlerIdFromCustomId } from "./interaction-context";
-import { composeMiddleware } from "./interaction-middleware";
-import { ensureActorMiddleware } from "./middlewares/ensure-actor.middleware";
 
 /**
  * Main router for handling Discord interactions.
- * Routes interactions to the appropriate handler based on type:
- * - Slash Commands → CommandHandler
- * - Buttons/Modals/Selects → InterfaceHandler
- * - Autocomplete → CommandHandler.autocomplete
- * - Context Menus → Future implementation
+ *
+ * Routes interactions to the appropriate handler or coordinator based on type:
+ * - Slash Commands → `CommandHandler` or `Coordinator`
+ * - Buttons/Modals/Selects → `Coordinator.handleInterface` or `InterfaceHandler.execute`
+ * - Autocomplete → `CommandHandler.autocomplete`
+ *
+ * When a Coordinator or Handler returns a `NormalizedRenderEnvelope` (built via the pure
+ * `renderEngine.build()`), `InteractionRouter` hands it to `interactionDispatcher` to
+ * execute the actual Discord API calls.
+ *
+ * Also acts as the centralized error handling boundary: all unhandled exceptions
+ * bubble up to `route()`, which logs them via `logger.exception`, builds an
+ * `ErrorAlertRecipe` envelope via `renderEngine.build()`, and dispatches it via
+ * `interactionDispatcher`.
  */
 export class InteractionRouter {
   private readonly runBaseMiddleware = composeMiddleware<
@@ -39,8 +51,14 @@ export class InteractionRouter {
   >([ensureActorMiddleware<BaseInteraction>()]);
 
   /**
-   * Route an interaction to the appropriate handler.
+   * Route an interaction to the appropriate handler and catch any unhandled errors.
+   *
    * @param interaction - The Discord interaction to route
+   *
+   * @example
+   * ```typescript
+   * await router.route(interaction);
+   * ```
    */
   public async route(interaction: Interaction): Promise<void> {
     try {
@@ -68,7 +86,50 @@ export class InteractionRouter {
         fields: { type: interaction.type.toString() },
       });
     } catch (error) {
-      logger.fatal("Error handling interaction", { error });
+      await this.handleInteractionError(interaction, error);
+    }
+  }
+
+  /**
+   * Centralized bubble-up error handler for all Discord interactions.
+   *
+   * Unconditionally logs the exception via `logger.exception` (which automatically
+   * downgrades `UserError`s with `log: false` to Debug level), builds the pure
+   * `ErrorAlertRecipe` envelope via `renderEngine.build()`, and delivers it via
+   * `interactionDispatcher.dispatch()`.
+   */
+  private async handleInteractionError(
+    interaction: Interaction,
+    error: unknown
+  ): Promise<void> {
+    logger.exception("Unhandled error during Discord interaction", error, {
+      fields: {
+        userId: interaction.user.id,
+        interactionType: interaction.type.toString(),
+      },
+    });
+
+    // Autocomplete interactions cannot receive standard message replies
+    if (!interaction.isRepliable()) {
+      return;
+    }
+
+    const isUserError = error instanceof UserError;
+    const message = isUserError
+      ? error.message
+      : "❌ **An unexpected error occurred.** Please try again in a moment.";
+
+    const errorEnvelope = renderEngine.build(ErrorAlertRecipe, {
+      message,
+      isUserError,
+    });
+
+    try {
+      await interactionDispatcher.dispatch(interaction, errorEnvelope);
+    } catch (replyError) {
+      logger.debug("Failed to deliver error response to Discord interaction", {
+        error: replyError,
+      });
     }
   }
 
@@ -99,7 +160,12 @@ export class InteractionRouter {
       interaction,
     };
 
-    await this.runBaseMiddleware(ctx, async () => handler.execute(ctx));
+    await this.runBaseMiddleware(ctx, async () => {
+      const envelope = await handler.execute(ctx);
+      if (envelope) {
+        await interactionDispatcher.dispatch(interaction, envelope);
+      }
+    });
   }
 
   private async handleInterface(
@@ -116,20 +182,39 @@ export class InteractionRouter {
       return;
     }
 
-    if (!(handler instanceof InterfaceHandler)) {
-      logger.warn("Handler is not an InterfaceHandler", {
-        fields: { handlerId },
-      });
-      return;
-    }
-
-    logger.debug("Executing interface", { fields: { handlerId } });
-
     const ctx: InterfaceContext = {
       interaction,
     };
 
-    await this.runBaseMiddleware(ctx, async () => handler.execute(ctx));
+    if (handler instanceof Coordinator) {
+      logger.debug("Executing coordinator interface", {
+        fields: { handlerId },
+      });
+      await this.runBaseMiddleware(ctx, async () => {
+        const envelope = await handler.handleInterface(ctx);
+        if (envelope) {
+          await interactionDispatcher.dispatch(interaction, envelope);
+        }
+      });
+      return;
+    }
+
+    if (handler instanceof InterfaceHandler) {
+      logger.debug("Executing standalone interface handler", {
+        fields: { handlerId },
+      });
+      await this.runBaseMiddleware(ctx, async () => {
+        const envelope = await handler.execute(ctx);
+        if (envelope) {
+          await interactionDispatcher.dispatch(interaction, envelope);
+        }
+      });
+      return;
+    }
+
+    logger.warn("Handler is neither a Coordinator nor an InterfaceHandler", {
+      fields: { handlerId },
+    });
   }
 
   private async handleAutocomplete(
@@ -178,7 +263,6 @@ export class InteractionRouter {
 
     await this.runBaseMiddleware(ctx, async () => Promise.resolve());
 
-    // TODO: Implement context menu routing
     return Promise.resolve();
   }
 }

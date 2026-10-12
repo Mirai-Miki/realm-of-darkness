@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm typecheck && tsup",
+    "build": "tsc -p tsconfig.build.json && tsup",
     "clean": "rimraf dist .turbo",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
@@ -19,11 +19,14 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
   },
+
   "dependencies": {
     "@realm/common": "workspace:*",
     "@realm/database": "workspace:*",
     "drizzle-orm": "catalog:",
     "fast-deep-equal": "^3.1.3",
-    "tsup": "^8.5.1"
+    "tsup": "^8.5.1",
+    "zod": "catalog:"
   }
+
 }

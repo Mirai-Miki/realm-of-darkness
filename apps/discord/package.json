@@ -13,12 +13,16 @@
     "emoji:sync": "tsx scripts/sync-emojis.ts",
     "format": "prettier --write \"src/**/*.{js,ts,json}\"",
     "format:check": "prettier --check \"src/**/*.{js,ts,json}\"",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@realm/assets": "workspace:*",
     "@realm/common": "workspace:*",
+    "@realm/content": "workspace:*",
     "@realm/core": "workspace:*",
+
     "@realm/logger": "workspace:*",
     "@realm/repositories": "workspace:*",
     "discord.js": "^14.27.0",

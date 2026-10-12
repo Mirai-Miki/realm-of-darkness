@@ -130,10 +130,10 @@ importers:
     devDependencies:
       '@nestjs/cli':
         specifier: ^12.0.8
-        version: 12.0.8(@swc/core@1.16.13)(@types/node@26.6.5)(fork-ts-checker-webpack-plugin@9.1.0(@typescript/typescript6@6.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)))(prettier@3.9.9)(ts-loader@9.6.2(@typescript/typescript6@6.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)))(tsconfig-paths-webpack-plugin@4.2.0)(webpack-node-externals@3.0.0)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2))
+        version: 12.0.8(@swc/core@1.16.13)(@types/node@26.6.5)(fork-ts-checker-webpack-plugin@9.1.0(typescript@7.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)))(prettier@3.9.9)(ts-loader@9.6.2(typescript@7.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)))(tsconfig-paths-webpack-plugin@4.2.0)(webpack-node-externals@3.0.0)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2))
       '@nestjs/schematics':
         specifier: ^12.0.6
-        version: 12.0.6(@typescript/typescript6@6.0.2)(chokidar@5.0.0)(prettier@3.9.9)
+        version: 12.0.6(chokidar@5.0.0)(prettier@3.9.9)(typescript@7.0.2)
       '@nestjs/testing':
         specifier: ^12.1.2
         version: 12.1.2(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.1.2(@nestjs/common@12.1.2(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
@@ -148,16 +148,16 @@ importers:
         version: 7.3.1
       ts-loader:
         specifier: ^9.6.2
-        version: 9.6.2(@typescript/typescript6@6.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2))
+        version: 9.6.2(typescript@7.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2))
 
   apps/codex:
     dependencies:
       '@astrojs/check':
         specifier: ^0.9.10
-        version: 0.9.10(@emnapi/runtime@1.11.3)(@typescript/typescript6@6.0.2)(prettier@3.9.9)
+        version: 0.9.10(@emnapi/runtime@1.11.3)(prettier@3.9.9)(typescript@7.0.2)
       '@astrojs/starlight':
         specifier: ^0.42.6
-        version: 0.42.6(@typescript/typescript6@6.0.2)(astro@7.3.8(@types/node@26.6.5)(esbuild@0.28.2)(idb-keyval@6.2.2)(ioredis@5.10.1)(jiti@1.21.7)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 0.42.6(astro@7.3.8(@types/node@26.6.5)(esbuild@0.28.2)(idb-keyval@6.2.2)(ioredis@5.10.1)(jiti@1.21.7)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(typescript@7.0.2)
       astro:
         specifier: ^7.3.8
         version: 7.3.8(@types/node@26.6.5)(esbuild@0.28.2)(idb-keyval@6.2.2)(ioredis@5.10.1)(jiti@1.21.7)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
@@ -173,6 +173,9 @@ importers:
       '@realm/common':
         specifier: workspace:*
         version: link:../../packages/common
+      '@realm/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@realm/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -229,9 +232,15 @@ importers:
 
   packages/content:
     dependencies:
+      '@realm/common':
+        specifier: workspace:*
+        version: link:../common
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(patch_hash=f20e8b64de39029c6d726ef4ed37bc95f4d585b90816509f5533e8e7064d9516)(@swc/core@1.16.13)(jiti@1.21.7)(postcss@8.5.29)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.1)
+      yaml:
+        specifier: ^2.8.2
+        version: 2.9.1
       zod:
         specifier: 'catalog:'
         version: 4.6.5
@@ -348,6 +357,9 @@ importers:
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(patch_hash=f20e8b64de39029c6d726ef4ed37bc95f4d585b90816509f5533e8e7064d9516)(@swc/core@1.16.13)(jiti@1.21.7)(postcss@8.5.29)(tsx@4.23.15)(typescript@7.0.2)(yaml@2.9.1)
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
 
 packages:
 
@@ -6996,12 +7008,12 @@ snapshots:
     transitivePeerDependencies:
       - '@emnapi/runtime'
 
-  '@astrojs/check@0.9.10(@emnapi/runtime@1.11.3)(@typescript/typescript6@6.0.2)(prettier@3.9.9)':
+  '@astrojs/check@0.9.10(@emnapi/runtime@1.11.3)(prettier@3.9.9)(typescript@7.0.2)':
     dependencies:
-      '@astrojs/language-server': 2.17.2(@emnapi/runtime@1.11.3)(@typescript/typescript6@6.0.2)(prettier@3.9.9)
+      '@astrojs/language-server': 2.17.2(@emnapi/runtime@1.11.3)(prettier@3.9.9)(typescript@7.0.2)
       chokidar: 4.0.3
       kleur: 4.1.5
-      typescript: '@typescript/typescript6@6.0.2'
+      typescript: 7.0.2
       yargs: 18.2.0
     transitivePeerDependencies:
       - '@emnapi/runtime'
@@ -7070,11 +7082,11 @@ snapshots:
       unified: 11.0.5
       yaml: 2.9.1
 
-  '@astrojs/language-server@2.17.2(@emnapi/runtime@1.11.3)(@typescript/typescript6@6.0.2)(prettier@3.9.9)':
+  '@astrojs/language-server@2.17.2(@emnapi/runtime@1.11.3)(prettier@3.9.9)(typescript@7.0.2)':
     dependencies:
       '@astrojs/astro2tsx': 0.1.2(@emnapi/runtime@1.11.3)
       '@astrojs/yaml2ts': 0.2.4
-      '@volar/kit': 2.4.28(@typescript/typescript6@6.0.2)
+      '@volar/kit': 2.4.28(typescript@7.0.2)
       '@volar/language-core': 2.4.28
       '@volar/language-server': 2.4.28
       '@volar/language-service': 2.4.28
@@ -7118,7 +7130,7 @@ snapshots:
       sitemap: 9.0.1
       zod: 4.6.5
 
-  '@astrojs/starlight@0.42.6(@typescript/typescript6@6.0.2)(astro@7.3.8(@types/node@26.6.5)(esbuild@0.28.2)(idb-keyval@6.2.2)(ioredis@5.10.1)(jiti@1.21.7)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))':
+  '@astrojs/starlight@0.42.6(astro@7.3.8(@types/node@26.6.5)(esbuild@0.28.2)(idb-keyval@6.2.2)(ioredis@5.10.1)(jiti@1.21.7)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(typescript@7.0.2)':
     dependencies:
       '@astrojs/markdown-satteri': 0.4.3
       '@astrojs/mdx': 8.0.3(@astrojs/markdown-satteri@0.4.3)(astro@7.3.8(@types/node@26.6.5)(esbuild@0.28.2)(idb-keyval@6.2.2)(ioredis@5.10.1)(jiti@1.21.7)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -7135,7 +7147,7 @@ snapshots:
       hast-util-to-html: 9.0.5
       hast-util-to-string: 3.0.1
       hastscript: 9.0.1
-      i18next: 26.4.2(@typescript/typescript6@6.0.2)
+      i18next: 26.4.2(typescript@7.0.2)
       js-yaml: 4.3.2
       klona: 2.0.6
       magic-string: 1.4.3
@@ -8472,7 +8484,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.4
     optional: true
 
-  '@nestjs/cli@12.0.8(@swc/core@1.16.13)(@types/node@26.6.5)(fork-ts-checker-webpack-plugin@9.1.0(@typescript/typescript6@6.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)))(prettier@3.9.9)(ts-loader@9.6.2(@typescript/typescript6@6.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)))(tsconfig-paths-webpack-plugin@4.2.0)(webpack-node-externals@3.0.0)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2))':
+  '@nestjs/cli@12.0.8(@swc/core@1.16.13)(@types/node@26.6.5)(fork-ts-checker-webpack-plugin@9.1.0(typescript@7.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)))(prettier@3.9.9)(ts-loader@9.6.2(typescript@7.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)))(tsconfig-paths-webpack-plugin@4.2.0)(webpack-node-externals@3.0.0)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2))':
     dependencies:
       '@angular-devkit/core': 22.2.0(chokidar@5.0.0)
       '@angular-devkit/schematics': 22.2.0(chokidar@5.0.0)
@@ -8491,8 +8503,8 @@ snapshots:
       typescript: 6.0.3
     optionalDependencies:
       '@swc/core': 1.16.13
-      fork-ts-checker-webpack-plugin: 9.1.0(@typescript/typescript6@6.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2))
-      ts-loader: 9.6.2(@typescript/typescript6@6.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2))
+      fork-ts-checker-webpack-plugin: 9.1.0(typescript@7.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2))
+      ts-loader: 9.6.2(typescript@7.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2))
       tsconfig-paths-webpack-plugin: 4.2.0
       webpack: 5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)
       webpack-node-externals: 3.0.0
@@ -8538,19 +8550,6 @@ snapshots:
       path-to-regexp: 8.4.2
       tslib: 2.8.1
 
-  '@nestjs/schematics@12.0.6(@typescript/typescript6@6.0.2)(chokidar@5.0.0)(prettier@3.9.9)':
-    dependencies:
-      '@angular-devkit/core': 22.2.0(chokidar@5.0.0)
-      '@angular-devkit/schematics': 22.2.0(chokidar@5.0.0)
-      comment-json: 5.0.0
-      jsonc-parser: 3.3.1
-      pluralize: 8.0.0
-      typescript: '@typescript/typescript6@6.0.2'
-    optionalDependencies:
-      prettier: 3.9.9
-    transitivePeerDependencies:
-      - chokidar
-
   '@nestjs/schematics@12.0.6(chokidar@5.0.0)(prettier@3.9.9)(typescript@6.0.3)':
     dependencies:
       '@angular-devkit/core': 22.2.0(chokidar@5.0.0)
@@ -8559,6 +8558,19 @@ snapshots:
       jsonc-parser: 3.3.1
       pluralize: 8.0.0
       typescript: 6.0.3
+    optionalDependencies:
+      prettier: 3.9.9
+    transitivePeerDependencies:
+      - chokidar
+
+  '@nestjs/schematics@12.0.6(chokidar@5.0.0)(prettier@3.9.9)(typescript@7.0.2)':
+    dependencies:
+      '@angular-devkit/core': 22.2.0(chokidar@5.0.0)
+      '@angular-devkit/schematics': 22.2.0(chokidar@5.0.0)
+      comment-json: 5.0.0
+      jsonc-parser: 3.3.1
+      pluralize: 8.0.0
+      typescript: 7.0.2
     optionalDependencies:
       prettier: 3.9.9
     transitivePeerDependencies:
@@ -9372,12 +9384,12 @@ snapshots:
 
   '@vladfrangu/async_event_emitter@2.4.7': {}
 
-  '@volar/kit@2.4.28(@typescript/typescript6@6.0.2)':
+  '@volar/kit@2.4.28(typescript@7.0.2)':
     dependencies:
       '@volar/language-service': 2.4.28
       '@volar/typescript': 2.4.28
       typesafe-path: 0.2.2
-      typescript: '@typescript/typescript6@6.0.2'
+      typescript: 7.0.2
       vscode-languageserver-textdocument: 1.0.15
       vscode-uri: 3.2.0
 
@@ -10055,14 +10067,14 @@ snapshots:
       yaml: 1.10.3
     optional: true
 
-  cosmiconfig@8.3.6(@typescript/typescript6@6.0.2):
+  cosmiconfig@8.3.6(typescript@7.0.2):
     dependencies:
       import-fresh: 3.3.1
       js-yaml: 4.3.2
       parse-json: 5.2.0
       path-type: 4.0.0
     optionalDependencies:
-      typescript: '@typescript/typescript6@6.0.2'
+      typescript: 7.0.2
     optional: true
 
   create-require@1.1.1: {}
@@ -10835,12 +10847,12 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
-  fork-ts-checker-webpack-plugin@9.1.0(@typescript/typescript6@6.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)):
+  fork-ts-checker-webpack-plugin@9.1.0(typescript@7.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)):
     dependencies:
       '@babel/code-frame': 7.29.7
       chalk: 4.1.2
       chokidar: 4.0.3
-      cosmiconfig: 8.3.6(@typescript/typescript6@6.0.2)
+      cosmiconfig: 8.3.6(typescript@7.0.2)
       deepmerge: 4.3.1
       fs-extra: 10.1.0
       memfs: 3.5.3
@@ -10849,7 +10861,7 @@ snapshots:
       schema-utils: 3.3.0
       semver: 7.8.5
       tapable: 2.3.3
-      typescript: '@typescript/typescript6@6.0.2'
+      typescript: 7.0.2
       webpack: 5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)
     optional: true
 
@@ -11151,9 +11163,9 @@ snapshots:
 
   human-signals@2.1.0: {}
 
-  i18next@26.4.2(@typescript/typescript6@6.0.2):
+  i18next@26.4.2(typescript@7.0.2):
     optionalDependencies:
-      typescript: '@typescript/typescript6@6.0.2'
+      typescript: 7.0.2
 
   iconv-lite@0.7.3:
     dependencies:
@@ -13259,12 +13271,12 @@ snapshots:
       esbuild: 0.28.2
       jest-util: 30.5.1
 
-  ts-loader@9.6.2(@typescript/typescript6@6.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)):
+  ts-loader@9.6.2(typescript@7.0.2)(webpack@5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)):
     dependencies:
       chalk: 4.1.2
       picomatch: 4.0.7
       source-map: 0.7.6
-      typescript: '@typescript/typescript6@6.0.2'
+      typescript: 7.0.2
       webpack: 5.106.0(@swc/core@1.16.13)(esbuild@0.28.2)
 
   ts-mixer@6.0.4: {}
