@@ -18,3 +18,11 @@ export {
 } from "./interaction-middleware";
 
 export { InteractionRouter } from "./interaction-router";
+
+export {
+  ensureActor,
+  ensureActorMiddleware,
+  ensureGuildContext,
+  ensureGuildContextMiddleware,
+  type GuildContextDependencies,
+} from "./middlewares";

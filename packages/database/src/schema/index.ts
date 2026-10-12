@@ -8,7 +8,7 @@ export * from "./chronicle-members";
 export * from "./discord-guilds";
 export * from "./chronicles";
 export * from "./storytellers";
-export * from "./characters/index";
+export * from "./characters";
 export * from "./initiative";
 export * from "./stats";
 export * from "./supporters";

@@ -7,7 +7,7 @@ config({ path: resolve(process.cwd(), "../../.env") });
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: "./src/schema/*",
+  schema: "./src/schema/index.ts",
   out: "./drizzle",
   casing: "snake_case",
   dbCredentials: {

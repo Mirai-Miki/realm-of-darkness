@@ -13,10 +13,11 @@ async function resetDatabase() {
   try {
     console.log("🗑️  Dropping public schema...");
 
-    // Drop the public schema cascade (removes all tables, types, etc.)
+    // Drop the public and drizzle migration schemas cascade (removes all tables, types, and migration tracking)
+    await db.execute(sql`DROP SCHEMA IF EXISTS drizzle CASCADE;`);
     await db.execute(sql`DROP SCHEMA public CASCADE;`);
 
-    console.log("✅ Public schema dropped");
+    console.log("✅ Public and drizzle schemas dropped");
     console.log("🔨 Recreating public schema...");
 
     // Recreate public schema

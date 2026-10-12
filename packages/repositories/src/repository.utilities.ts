@@ -24,7 +24,7 @@ export function hasDataChanged<
 >(
   current: T,
   incoming: U,
-  ignoreKeys: (keyof T)[] = ["id", "createdAt", "lastUpdated"]
+  ignoreKeys: (keyof T)[] = ["id", "createdAt", "lastUpdated", "updatedAt"]
 ): boolean {
   const incomingKeys = Object.keys(incoming) as (keyof U)[];
   const keysToCompare = incomingKeys.filter(

@@ -358,5 +358,53 @@ describe("Logging", () => {
 
       consoleSpy.mockRestore();
     });
+
+    /**
+     * Test RealmError with deeply nested cause chain (e.g. DrizzleQueryError -> pg DatabaseError).
+     */
+    it("should unwrap nested Error causes and extract errorCode into fields", () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+
+      logger.configure({
+        enableConsoleLogging: true,
+      });
+
+      const pgError = Object.assign(
+        new Error('relation "discord_guilds" does not exist'),
+        { code: "42P01" }
+      );
+      const drizzleError = new Error(
+        'Failed query: select "discord_id" from "discord_guilds"',
+        { cause: pgError }
+      );
+      const realmError = new RealmError(
+        "Failed to check discord guild existence",
+        { cause: drizzleError }
+      );
+
+      logger.exception("Failed to sync guild", realmError);
+
+      expect(consoleSpy).toHaveBeenCalled();
+      const calls = consoleSpy.mock.calls.flat();
+
+      const hasNestedStack = calls.some(
+        (arg) =>
+          typeof arg === "string" &&
+          arg.includes("Failed query:") &&
+          arg.includes("Caused by:") &&
+          arg.includes('relation "discord_guilds" does not exist')
+      );
+      expect(hasNestedStack).toBe(true);
+
+      const hasErrorCodeField = calls.some(
+        (arg) =>
+          typeof arg === "object" &&
+          arg !== null &&
+          (arg as Record<string, unknown>).errorCode === "42P01"
+      );
+      expect(hasErrorCodeField).toBe(true);
+
+      consoleSpy.mockRestore();
+    });
   });
 });

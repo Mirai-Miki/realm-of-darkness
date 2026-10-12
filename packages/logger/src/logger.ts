@@ -417,7 +417,8 @@ class Logger implements ILogger {
       logEntry.location = callerLocation;
     }
 
-    // Add stack trace if an error is provided
+    // Add stack trace and unwrap nested causes if an error is provided
+    const causeFields: Record<string, string> = {};
     if (options.error) {
       let errorToLog: Error;
 
@@ -425,24 +426,81 @@ class Logger implements ILogger {
         errorToLog = options.error.cause;
       } else if (options.error instanceof Error) {
         errorToLog = options.error;
+      } else if (
+        typeof options.error === "string" ||
+        typeof options.error === "number" ||
+        typeof options.error === "boolean"
+      ) {
+        errorToLog = new Error(String(options.error));
       } else {
         try {
           errorToLog = new Error(JSON.stringify(options.error));
         } catch {
-          errorToLog = new Error(String(options.error as any));
+          errorToLog = new Error("Unserializable error value");
         }
       }
 
-      logEntry.stackTrace = errorToLog.stack;
+      // Walk any nested .cause chain (e.g. DrizzleQueryError -> pg DatabaseError)
+      const stackParts: string[] = [
+        errorToLog.stack ?? `${errorToLog.name}: ${errorToLog.message}`,
+      ];
+      let currentCause: unknown = errorToLog.cause;
+      let depth = 0;
+
+      while (currentCause && depth < 5) {
+        depth += 1;
+        if (currentCause instanceof Error) {
+          stackParts.push(
+            `Caused by: ${currentCause.stack ?? `${currentCause.name}: ${currentCause.message}`}`
+          );
+          if (
+            "code" in currentCause &&
+            typeof currentCause.code === "string" &&
+            !causeFields.errorCode
+          ) {
+            causeFields.errorCode = currentCause.code;
+          }
+          currentCause = currentCause.cause;
+        } else if (typeof currentCause === "object" && currentCause !== null) {
+          const causeRecord = currentCause as Record<string, unknown>;
+          if (typeof causeRecord.code === "string" && !causeFields.errorCode) {
+            causeFields.errorCode = causeRecord.code;
+          }
+          stackParts.push(`Caused by: ${JSON.stringify(currentCause)}`);
+          currentCause = causeRecord.cause;
+        } else if (
+          typeof currentCause === "string" ||
+          typeof currentCause === "number" ||
+          typeof currentCause === "boolean"
+        ) {
+          stackParts.push(`Caused by: ${String(currentCause)}`);
+          break;
+        } else {
+          break;
+        }
+      }
+
+      if (
+        "code" in errorToLog &&
+        typeof errorToLog.code === "string" &&
+        !causeFields.errorCode
+      ) {
+        causeFields.errorCode = errorToLog.code;
+      }
+
+      logEntry.stackTrace = stackParts.join("\n");
     }
 
     // Add additional fields
+    const hasCauseFields = Object.keys(causeFields).length > 0;
     if (
       options.fields ||
+      hasCauseFields ||
       (options.error instanceof RealmError && options.error.fields) ||
       (options.error instanceof RealmError && options.error.cause)
     ) {
       logEntry.fields = {
+        ...causeFields,
         ...options.fields,
         ...(options.error instanceof RealmError ? options.error.fields : {}),
         ...(options.error instanceof RealmError && options.error.cause

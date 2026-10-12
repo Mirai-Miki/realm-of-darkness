@@ -10,7 +10,10 @@ import { registry } from "../registry";
 import { parseHandlerIdFromCustomId } from "./interaction-context";
 import { interactionDispatcher } from "./interaction-dispatcher";
 import { composeMiddleware } from "./interaction-middleware";
-import { ensureActorMiddleware } from "./middlewares/ensure-actor.middleware";
+import {
+  ensureActorMiddleware,
+  ensureGuildContextMiddleware,
+} from "./middlewares";
 import type {
   AutocompleteInteraction,
   BaseInteraction,
@@ -48,7 +51,10 @@ import type {
 export class InteractionRouter {
   private readonly runBaseMiddleware = composeMiddleware<
     BaseInteractionContext<BaseInteraction>
-  >([ensureActorMiddleware<BaseInteraction>()]);
+  >([
+    ensureActorMiddleware<BaseInteraction>(),
+    ensureGuildContextMiddleware<BaseInteraction>(),
+  ]);
 
   /**
    * Route an interaction to the appropriate handler and catch any unhandled errors.

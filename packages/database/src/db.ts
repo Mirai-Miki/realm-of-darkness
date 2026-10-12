@@ -9,7 +9,12 @@ import {
 } from "./schema/chronicle-members";
 import { storytellers, storytellersRelations } from "./schema/storytellers";
 import { chronicles, chroniclesRelations } from "./schema/chronicles";
-import { discordGuilds, discordGuildsRelations } from "./schema/discord-guilds";
+import {
+  discordGuilds,
+  discordGuildsRelations,
+  discordGuildChronicles,
+  discordGuildChroniclesRelations,
+} from "./schema/discord-guilds";
 import { initiativeTrackers } from "./schema/initiative";
 import { commandStats } from "./schema/stats";
 import {
@@ -22,6 +27,10 @@ import {
   supportersRelations,
   supporterLevel,
 } from "./schema/supporters";
+import {
+  interactionSessions,
+  interactionSessionsRelations,
+} from "./schema/interaction-sessions";
 
 // Load environment variables from root .env file
 config({ path: resolve(process.cwd(), "../../.env"), quiet: true });
@@ -57,6 +66,8 @@ export const db = drizzle(pool, {
     chroniclesRelations,
     discordGuilds,
     discordGuildsRelations,
+    discordGuildChronicles,
+    discordGuildChroniclesRelations,
     chronicleMembers,
     chronicleMembersRelations,
     storytellers,
@@ -69,6 +80,8 @@ export const db = drizzle(pool, {
     supporters,
     supportersRelations,
     supporterLevel,
+    interactionSessions,
+    interactionSessionsRelations,
   },
 });
 

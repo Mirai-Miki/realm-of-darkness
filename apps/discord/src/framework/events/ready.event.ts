@@ -47,11 +47,17 @@ class ReadyEvent extends DiscordEvent<Events.ClientReady> {
       logger.info("Syncing guilds with database...");
 
       const guildSyncAction = new GuildSyncAction();
-      await guildSyncAction.execute(client.guilds.cache);
-
-      logger.info(
-        `Successfully synced ${client.guilds.cache.size} guilds with database`
+      const { syncedCount, failedCount } = await guildSyncAction.execute(
+        client.guilds.cache
       );
+
+      if (failedCount > 0) {
+        logger.warn(
+          `Guild sync completed with errors (${syncedCount} synced, ${failedCount} failed)`
+        );
+      } else {
+        logger.info(`Successfully synced ${syncedCount} guilds with database`);
+      }
     } catch (error) {
       logger.exception("Failed to sync guilds", error);
     }

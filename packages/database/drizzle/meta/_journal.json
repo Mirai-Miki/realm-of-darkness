@@ -15,6 +15,13 @@
       "when": 1779522934671,
       "tag": "0001_fat_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791786211777,
+      "tag": "0002_wise_piledriver",
+      "breakpoints": true
     }
   ]
 }
