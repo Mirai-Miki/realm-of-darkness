@@ -1,6 +1,7 @@
 import {
   ChronicleDataSchema,
   ChronicleMemberDataSchema,
+  DiscordCdnUrlMaxLength,
   DiscordGuildDataSchema,
   RealmError,
   UserDataSchema,
@@ -193,7 +194,9 @@ describe("Guild, Chronicle & User Domain Entities", () => {
 
       expect(() => member.removeBoost()).toThrow(RealmError);
       expect(() => member.setNickname("a".repeat(50))).toThrow(RealmError);
-      expect(() => member.setAvatarUrl("bad-url")).toThrow(RealmError);
+      expect(() =>
+        member.setAvatarUrl("a".repeat(DiscordCdnUrlMaxLength + 1))
+      ).toThrow(RealmError);
     });
   });
 
@@ -244,7 +247,9 @@ describe("Guild, Chronicle & User Domain Entities", () => {
       const user = new User(createMockUserData());
 
       expect(() => user.updateDisplayName("")).toThrow(RealmError);
-      expect(() => user.updateAvatarUrl("not-a-url")).toThrow(RealmError);
+      expect(() =>
+        user.updateAvatarUrl("a".repeat(DiscordCdnUrlMaxLength + 1))
+      ).toThrow(RealmError);
     });
   });
 });

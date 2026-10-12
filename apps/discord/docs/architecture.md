@@ -15,6 +15,8 @@ This document defines the canonical architecture for commands, component interac
 2. **Stateless in Memory, Session State in PostgreSQL**:
    - **Never** use Discord.js in-memory collectors (`createMessageComponentCollector`).
    - All multi-step workflows (creation wizards, sheet editors, interactive dice builders) persist state in the PostgreSQL `interaction_sessions` table via `InteractionSessionRepository` (`@realm/repositories`).
+   - Sessions default to a **60-day (two-month) TTL** (`DEFAULT_SESSION_TTL_MS`) so public-facing buttons (such as dice rerolls) remain interactive for two months.
+   - Expired sessions are automatically swept every **12 hours** (and on startup) by `SessionCleanupService` (`src/framework/session-cleanup.service.ts`), strictly guarded to run only on **Shard 0**.
    - Every interactive button, select menu, and modal uses a single uniform `customId` format:
      ```text
      {handlerId}:{sessionId}:{control}

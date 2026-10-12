@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, lte } from "drizzle-orm";
 import { db, interactionSessions } from "@realm/database";
 import { generateSnowflake, RealmError, UserError } from "@realm/common";
 import type {
@@ -11,9 +11,11 @@ import type { InteractionSessionDb } from "@realm/database";
 import type { z } from "zod";
 
 /**
- * Default Time-To-Live for an interaction session (24 hours in milliseconds).
+ * Default Time-To-Live for an interaction session (60 days / ~2 months in milliseconds).
+ * Gives users ample time to interact with public-facing buttons (such as dice rerolls)
+ * while keeping the PostgreSQL table periodically swept.
  */
-export const DEFAULT_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+export const DEFAULT_SESSION_TTL_MS = 60 * 24 * 60 * 60 * 1000;
 
 /**
  * Converts a database `interaction_sessions` row into a validated, strongly-typed
@@ -254,5 +256,28 @@ export class InteractionSessionRepository {
    */
   public async delete(id: Snowflake): Promise<void> {
     await db.delete(interactionSessions).where(eq(interactionSessions.id, id));
+  }
+
+  /**
+   * Delete all interaction sessions whose `expiresAt` timestamp is at or before `now`.
+   *
+   * Uses the `interaction_sessions_expires_at_idx` B-tree index in PostgreSQL
+   * for fast periodic sweeping.
+   *
+   * @param now - Cutoff timestamp (defaults to `new Date()`)
+   * @returns The number of expired session rows deleted
+   *
+   * @example
+   * ```typescript
+   * const deletedCount = await repo.deleteExpired();
+   * ```
+   */
+  public async deleteExpired(now: Date = new Date()): Promise<number> {
+    const deleted = await db
+      .delete(interactionSessions)
+      .where(lte(interactionSessions.expiresAt, now))
+      .returning({ id: interactionSessions.id });
+
+    return deleted.length;
   }
 }

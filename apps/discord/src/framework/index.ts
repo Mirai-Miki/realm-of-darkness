@@ -16,7 +16,6 @@ export {
   BaseInteractionHandler,
   CommandHandler,
   Coordinator,
-  InterfaceHandler,
   DiscordEvent,
   createEvent,
 } from "./entities";
@@ -56,6 +55,13 @@ export {
   decodeSessionCustomId,
   type ParsedSessionCustomId,
 } from "./session-custom-id.util";
+
+// Background Session Cleanup Service (Shard 0)
+export {
+  SessionCleanupService,
+  sessionCleanupService,
+  DEFAULT_SESSION_SWEEP_INTERVAL_MS,
+} from "./session-cleanup.service";
 
 // Loader
 export { Loader, loader } from "./loader";

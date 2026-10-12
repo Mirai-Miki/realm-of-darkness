@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { generateSnowflake, RealmError } from "@realm/common";
-import { parseSessionRow } from "../src";
+import { DEFAULT_SESSION_TTL_MS, parseSessionRow } from "../src";
 
 const SampleStateSchema = z.object({
   characterName: z.string(),
@@ -8,6 +8,11 @@ const SampleStateSchema = z.object({
 });
 
 describe("InteractionSessionRepository & parseSessionRow (@realm/repositories)", () => {
+  it("should configure DEFAULT_SESSION_TTL_MS to 60 days (two months)", () => {
+    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
+    expect(DEFAULT_SESSION_TTL_MS).toBe(sixtyDaysMs);
+  });
+
   it("should parse a valid database interaction_sessions row into a TypedInteractionSession", () => {
     const now = new Date();
     const row = {

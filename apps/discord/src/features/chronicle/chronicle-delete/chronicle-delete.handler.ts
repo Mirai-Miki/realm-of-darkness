@@ -1,3 +1,0 @@
-// slash command for deleting a chronicle entry
-// this is the actual command cordinator but since deleting a chronicle is share by multiple apps we will mostly just be using actions/services from the core package
-// one thing we will do in addition to the core will be to check if this is the last chronicle in the guild. Since we will always have a chronicle attached to a guild if the user deletes it then we will need a new default chronicle (and we will need to warn the user this will happen before they accept). If the user really wants to delete the chronicle and it is the last one they will need to remove the bot from the guild.

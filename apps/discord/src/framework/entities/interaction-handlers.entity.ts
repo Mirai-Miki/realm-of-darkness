@@ -8,13 +8,12 @@ import type {
 
 /**
  * Base class for all interaction handlers.
- * This provides the foundation for command handlers, interface handlers, and coordinators.
+ * This provides the foundation for command handlers and coordinators.
  */
 export abstract class BaseInteractionHandler {
   /**
    * Unique identifier for this handler.
    * For commands and coordinators, this is the command name.
-   * For standalone interfaces (buttons/modals), this is the custom ID prefix.
    */
   abstract readonly handlerId: string;
 }
@@ -40,15 +39,13 @@ export abstract class CommandHandler extends BaseInteractionHandler {
   }
 
   /**
-   * Execute the command and optionally return a `NormalizedRenderEnvelope`
+   * Execute the command and return a `NormalizedRenderEnvelope`
    * for `InteractionRouter` + `InteractionDispatcher` to deliver to Discord.
    *
    * @param ctx - The typed command context
-   * @returns A normalized render envelope (or `void` for legacy handlers)
+   * @returns A normalized render envelope built by `RenderEngine`
    */
-  abstract execute(
-    ctx: CommandContext
-  ): Promise<NormalizedRenderEnvelope | void>;
+  abstract execute(ctx: CommandContext): Promise<NormalizedRenderEnvelope>;
 
   /**
    * Handle autocomplete interactions for the command.
@@ -56,23 +53,6 @@ export abstract class CommandHandler extends BaseInteractionHandler {
    * @param ctx - The typed autocomplete context
    */
   abstract autocomplete?(ctx: AutocompleteContext): Promise<void>;
-}
-
-/**
- * Handler for Interface Interactions (Buttons, Modals, Selects).
- * Implements the View-First pattern where the handler pulls the contract from the View.
- */
-export abstract class InterfaceHandler extends BaseInteractionHandler {
-  /**
-   * Execute the handler logic and optionally return a `NormalizedRenderEnvelope`
-   * for `InteractionRouter` + `InteractionDispatcher` to deliver to Discord.
-   *
-   * @param ctx - The typed interface context
-   * @returns A normalized render envelope (or `void` for legacy handlers)
-   */
-  abstract execute(
-    ctx: InterfaceContext
-  ): Promise<NormalizedRenderEnvelope | void>;
 }
 
 /**
@@ -97,5 +77,5 @@ export abstract class Coordinator extends CommandHandler {
    */
   abstract handleInterface(
     ctx: InterfaceContext
-  ): Promise<NormalizedRenderEnvelope | void>;
+  ): Promise<NormalizedRenderEnvelope>;
 }

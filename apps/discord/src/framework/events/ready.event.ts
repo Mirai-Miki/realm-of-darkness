@@ -2,7 +2,7 @@ import type { Client } from "discord.js";
 
 import { Events } from "discord.js";
 import { logger } from "@realm/logger";
-import { DiscordEvent } from "framework";
+import { DiscordEvent, sessionCleanupService } from "framework";
 import { GuildSyncAction } from "features/guild/guild-sync.action";
 import { initializeEmojis } from "framework/emoji-manager";
 
@@ -13,7 +13,7 @@ import { initializeEmojis } from "framework/emoji-manager";
  * Handles:
  * - Emoji initialization
  * - Syncing all guilds with database
- * - Setting up activity status updates
+ * - Starting the Shard 0 interaction session cleanup scheduler
  */
 class ReadyEvent extends DiscordEvent<Events.ClientReady> {
   readonly eventName = Events.ClientReady as const;
@@ -61,6 +61,9 @@ class ReadyEvent extends DiscordEvent<Events.ClientReady> {
     } catch (error) {
       logger.exception("Failed to sync guilds", error);
     }
+
+    // Start the 12-hour expired session cleanup sweeper (guarded to Shard 0)
+    sessionCleanupService.start(client);
 
     logger.info("Bot is ready and operational");
   }

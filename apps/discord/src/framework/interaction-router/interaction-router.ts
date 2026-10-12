@@ -4,7 +4,6 @@ import { ErrorAlertRecipe, renderEngine } from "../../ui";
 import {
   CommandHandler,
   Coordinator,
-  InterfaceHandler,
 } from "../entities/interaction-handlers.entity";
 import { registry } from "../registry";
 import { parseHandlerIdFromCustomId } from "./interaction-context";
@@ -36,7 +35,7 @@ import type {
  *
  * Routes interactions to the appropriate handler or coordinator based on type:
  * - Slash Commands → `CommandHandler` or `Coordinator`
- * - Buttons/Modals/Selects → `Coordinator.handleInterface` or `InterfaceHandler.execute`
+ * - Buttons/Modals/Selects → `Coordinator.handleInterface`
  * - Autocomplete → `CommandHandler.autocomplete`
  *
  * When a Coordinator or Handler returns a `NormalizedRenderEnvelope` (built via the pure
@@ -168,9 +167,7 @@ export class InteractionRouter {
 
     await this.runBaseMiddleware(ctx, async () => {
       const envelope = await handler.execute(ctx);
-      if (envelope) {
-        await interactionDispatcher.dispatch(interaction, envelope);
-      }
+      await interactionDispatcher.dispatch(interaction, envelope);
     });
   }
 
@@ -182,7 +179,14 @@ export class InteractionRouter {
     const handler = registry.getInteractionHandler(handlerId);
 
     if (!handler) {
-      logger.warn("No interface handler found", {
+      logger.warn("No coordinator found for interface interaction", {
+        fields: { handlerId },
+      });
+      return;
+    }
+
+    if (!(handler instanceof Coordinator)) {
+      logger.warn("Handler is not a Coordinator", {
         fields: { handlerId },
       });
       return;
@@ -192,34 +196,12 @@ export class InteractionRouter {
       interaction,
     };
 
-    if (handler instanceof Coordinator) {
-      logger.debug("Executing coordinator interface", {
-        fields: { handlerId },
-      });
-      await this.runBaseMiddleware(ctx, async () => {
-        const envelope = await handler.handleInterface(ctx);
-        if (envelope) {
-          await interactionDispatcher.dispatch(interaction, envelope);
-        }
-      });
-      return;
-    }
-
-    if (handler instanceof InterfaceHandler) {
-      logger.debug("Executing standalone interface handler", {
-        fields: { handlerId },
-      });
-      await this.runBaseMiddleware(ctx, async () => {
-        const envelope = await handler.execute(ctx);
-        if (envelope) {
-          await interactionDispatcher.dispatch(interaction, envelope);
-        }
-      });
-      return;
-    }
-
-    logger.warn("Handler is neither a Coordinator nor an InterfaceHandler", {
+    logger.debug("Executing coordinator interface", {
       fields: { handlerId },
+    });
+    await this.runBaseMiddleware(ctx, async () => {
+      const envelope = await handler.handleInterface(ctx);
+      await interactionDispatcher.dispatch(interaction, envelope);
     });
   }
 

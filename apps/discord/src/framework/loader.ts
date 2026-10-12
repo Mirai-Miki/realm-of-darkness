@@ -71,39 +71,27 @@ export class Loader {
   }
 
   /**
-   * Load all handlers from the features directory.
-   * Scans for files matching the handler pattern and registers
-   * any exported handler instances.
+   * Load all coordinators from the features directory.
+   * Scans for files matching `*.coordinator.ts` and registers
+   * any exported handler/coordinator instances.
    *
    * @param rootDirectory - The root directory to scan
    */
   public async loadInteractionHandlers(rootDirectory: string): Promise<void> {
     const start = Date.now();
 
-    logger.debug("Scanning for handlers", { fields: { rootDirectory } });
+    logger.debug("Scanning for coordinators", { fields: { rootDirectory } });
 
-    // Patterns match:
-    // - src/features/**/something.handler.ts (legacy singular)
-    // - src/features/**/something.handlers.ts (preferred plural; supports multiple handlers per file)
-    // - src/features/**/something.coordinator.ts (unified Coordinator pattern)
-    // Note: We intentionally do not load .js files.
-    const patterns = [
-      "**/*.handler.ts",
-      "**/*.handlers.ts",
-      "**/*.coordinator.ts",
-    ];
+    const handlers = await this.scanHandlerFiles(
+      rootDirectory,
+      "**/*.coordinator.ts"
+    );
 
-    const handlers = (
-      await Promise.all(
-        patterns.map((pattern) => this.scanHandlerFiles(rootDirectory, pattern))
-      )
-    ).flat();
-
-    logger.debug("Found handler files", {
+    logger.debug("Found coordinator files", {
       fields: { count: handlers.length.toString() },
     });
 
-    // Register all handlers
+    // Register all coordinators
     for (const handler of handlers) {
       registry.registerInteractionHandler(handler);
     }
@@ -111,7 +99,7 @@ export class Loader {
     const elapsed = Date.now() - start;
     const stats = registry.getStats();
 
-    logger.debug("Handler loading complete", {
+    logger.debug("Coordinator loading complete", {
       fields: {
         elapsed: `${elapsed}ms`,
         handlers: stats.handlers.toString(),
@@ -195,7 +183,7 @@ export class Loader {
   }
 
   /**
-   * Scan and return all command handlers without registering them.
+   * Scan and return all command handlers/coordinators without registering them.
    * Useful for deployment scripts that need to extract command data.
    *
    * @param rootDirectory - The root directory to scan
@@ -204,22 +192,10 @@ export class Loader {
   public async scanCommandHandlers(
     rootDirectory: string
   ): Promise<CommandHandler[]> {
-    // Patterns match:
-    // - src/features/**/something.handler.ts (legacy singular)
-    // - src/features/**/something.handlers.ts (preferred plural)
-    // - src/features/**/something.coordinator.ts (unified Coordinator pattern)
-    // Note: We intentionally do not load .js files.
-    const patterns = [
-      "**/*.handler.ts",
-      "**/*.handlers.ts",
-      "**/*.coordinator.ts",
-    ];
-
-    const allHandlers = (
-      await Promise.all(
-        patterns.map((pattern) => this.scanHandlerFiles(rootDirectory, pattern))
-      )
-    ).flat();
+    const allHandlers = await this.scanHandlerFiles(
+      rootDirectory,
+      "**/*.coordinator.ts"
+    );
 
     // Filter to only CommandHandler instances
     return allHandlers.filter(
