@@ -21,3 +21,19 @@ export {
   SheetTabBarComponent,
   type SheetTabBarProps,
 } from "./sheet-tab-bar.component";
+
+export {
+  SplatSelectComponent,
+  formatSplatLabel,
+  type SplatSelectProps,
+} from "./splat-select.component";
+
+export {
+  CharacterQuickActionsComponent,
+  type CharacterQuickActionsProps,
+} from "./character-quick-actions.component";
+
+export {
+  createCharacterBioModal,
+  type CharacterBioModalProps,
+} from "./character-bio-modal.component";
