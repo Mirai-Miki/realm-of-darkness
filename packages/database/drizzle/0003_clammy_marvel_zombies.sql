@@ -1,0 +1,2 @@
+ALTER TABLE "chronicles" ADD COLUMN "default_version" varchar(16) DEFAULT '5th' NOT NULL;--> statement-breakpoint
+ALTER TABLE "chronicles" ADD COLUMN "storyteller_role_ids" bigint[] DEFAULT '{}' NOT NULL;

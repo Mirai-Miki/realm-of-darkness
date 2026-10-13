@@ -6,6 +6,7 @@ import {
   Character5thSheetSchema,
 } from "./character-5th.definitions";
 import { Splat } from "../character.definitions";
+import { Humanity5thDataSchema } from "../trackers";
 
 // ===========================================================================
 // 5th Edition Vampire Character Constraints & Schema
@@ -34,6 +35,17 @@ export const HungerAmountSchema = z.int().min(0).max(5);
  */
 export const Vampire5thSheetSchema = Character5thSheetSchema.extend({
   hunger: HungerDataSchema.default(1),
+  humanity: Humanity5thDataSchema.default({ total: 7, stains: 0 }),
+  bloodPotency: z
+    .int()
+    .min(Vampire5thConstraints.BloodPotency.min)
+    .max(Vampire5thConstraints.BloodPotency.max)
+    .default(0),
+  generation: z
+    .int()
+    .min(Vampire5thConstraints.Generation.min)
+    .max(Vampire5thConstraints.Generation.max)
+    .default(13),
 });
 export type Vampire5thSheetData = z.infer<typeof Vampire5thSheetSchema>;
 
@@ -43,6 +55,17 @@ export type Vampire5thSheetData = z.infer<typeof Vampire5thSheetSchema>;
 export const Vampire5thDataSchema = Character5thDataSchema.extend({
   splat: z.literal(Splat.Vampire5th),
   hunger: HungerDataSchema.default(1),
+  humanity: Humanity5thDataSchema.default({ total: 7, stains: 0 }),
+  bloodPotency: z
+    .int()
+    .min(Vampire5thConstraints.BloodPotency.min)
+    .max(Vampire5thConstraints.BloodPotency.max)
+    .default(0),
+  generation: z
+    .int()
+    .min(Vampire5thConstraints.Generation.min)
+    .max(Vampire5thConstraints.Generation.max)
+    .default(13),
 });
 export type Vampire5thData = z.infer<typeof Vampire5thDataSchema>;
 

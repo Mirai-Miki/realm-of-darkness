@@ -4,6 +4,5 @@
  */
 
 export * from "./character-session.definitions";
-export * from "./mock-character.service";
 export * from "./character.recipes";
 export * from "./character.coordinator";

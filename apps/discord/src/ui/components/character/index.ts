@@ -10,3 +10,14 @@ export {
   type CharacterTrackersProps,
   type TrackerQuickButtonsProps,
 } from "./character-trackers.component";
+
+export {
+  CharacterTraitsComponent,
+  formatDots,
+  type CharacterTraitsProps,
+} from "./character-traits.component";
+
+export {
+  SheetTabBarComponent,
+  type SheetTabBarProps,
+} from "./sheet-tab-bar.component";

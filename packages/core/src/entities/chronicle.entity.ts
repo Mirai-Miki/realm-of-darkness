@@ -2,10 +2,13 @@ import {
   RealmError,
   ChronicleNameSchema,
   ChronicleIconUrlSchema,
+  GameEditionSchema,
+  SnowflakeSchema,
 } from "@realm/common";
 import type {
   ChronicleData,
   ChronicleRepositoryInput,
+  GameEdition,
   Snowflake,
 } from "@realm/common";
 
@@ -79,6 +82,34 @@ export class Chronicle {
   }
 
   /**
+   * Get the Chronicle's default game edition/version.
+   *
+   * @returns Default game edition (5th, 20th, cod)
+   *
+   * @example
+   * ```typescript
+   * const version = chronicle.defaultVersion;
+   * ```
+   */
+  public get defaultVersion(): GameEdition {
+    return this._data.defaultVersion;
+  }
+
+  /**
+   * Get the Chronicle's storyteller role snowflake IDs.
+   *
+   * @returns Array of role snowflake IDs
+   *
+   * @example
+   * ```typescript
+   * const roles = chronicle.storytellerRoleIds;
+   * ```
+   */
+  public get storytellerRoleIds(): Snowflake[] {
+    return [...this._data.storytellerRoleIds];
+  }
+
+  /**
    * Get the timestamp when the Chronicle was created.
    *
    * @returns Creation Date
@@ -149,6 +180,70 @@ export class Chronicle {
   }
 
   /**
+   * Update the Chronicle's default game edition/version.
+   *
+   * @param version - New default edition
+   * @throws {RealmError} If version is invalid according to GameEditionSchema
+   *
+   * @example
+   * ```typescript
+   * chronicle.setDefaultVersion(GameEdition.Twentieth);
+   * ```
+   */
+  public setDefaultVersion(version: GameEdition): void {
+    const result = GameEditionSchema.safeParse(version);
+    if (!result.success) {
+      throw new RealmError("Invalid game edition", {
+        cause: result.error,
+      });
+    }
+    this._data.defaultVersion = result.data;
+  }
+
+  /**
+   * Add a storyteller role to this chronicle.
+   *
+   * @param roleId - Discord role snowflake ID
+   * @throws {RealmError} If roleId is invalid according to SnowflakeSchema
+   *
+   * @example
+   * ```typescript
+   * chronicle.addStorytellerRole("123456789012345678");
+   * ```
+   */
+  public addStorytellerRole(roleId: Snowflake): void {
+    const result = SnowflakeSchema.safeParse(roleId);
+    if (!result.success) {
+      throw new RealmError("Invalid role ID format", { cause: result.error });
+    }
+    if (!this._data.storytellerRoleIds.includes(result.data)) {
+      this._data.storytellerRoleIds.push(result.data);
+    }
+  }
+
+  /**
+   * Remove a storyteller role from this chronicle.
+   *
+   * @param roleId - Discord role snowflake ID
+   * @throws {RealmError} If roleId is invalid according to SnowflakeSchema
+   *
+   * @example
+   * ```typescript
+   * chronicle.removeStorytellerRole("123456789012345678");
+   * ```
+   */
+  public removeStorytellerRole(roleId: Snowflake): void {
+    const result = SnowflakeSchema.safeParse(roleId);
+    if (!result.success) {
+      throw new RealmError("Invalid role ID format", { cause: result.error });
+    }
+    const index = this._data.storytellerRoleIds.indexOf(result.data);
+    if (index > -1) {
+      this._data.storytellerRoleIds.splice(index, 1);
+    }
+  }
+
+  /**
    * Extract a defensive copy of the Chronicle data from this entity.
    *
    * @returns ChronicleData for persistence or serialization
@@ -178,6 +273,8 @@ export class Chronicle {
       id: this._data.id,
       name: this._data.name,
       iconUrl: this._data.iconUrl,
+      defaultVersion: this._data.defaultVersion,
+      storytellerRoleIds: this._data.storytellerRoleIds,
     };
   }
 }

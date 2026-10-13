@@ -42,12 +42,13 @@ Build the unified dice rolling suite connecting `@realm/core` dice services (`V5
 
 Transition `/character` from `MockCharacterService` to real PostgreSQL persistence via `CharacterRepository` and `@realm/core` domain entities.
 
-- [ ] **Database Wiring**: Replace `mockCharacterStore` in `CharacterCoordinator` with `CharacterRepository` (`@realm/repositories`) and `CharacterFactory` (`@realm/core`).
+- [x] **Database Wiring**: Replace `mockCharacterStore` in `CharacterCoordinator` with `CharacterRepository` (`@realm/repositories`) and `CharacterFactory` (`@realm/core`).
+- [x] **All-Splat Creation & Dashboard Support**: Creation wizard supporting all 13 splats without lineage/clan prompts (clan/creed deferred until mechanics content registry is integrated).
+- [x] **Sheet Tabs & Dynamic Components**: Added `SheetTabBarComponent`, `CharacterTraitsComponent` (5th & 20th Attributes/Skills with dot rendering), splat-adaptive `CharacterTrackersComponent`, and safe deletion confirmation flow.
 - [ ] **Active Character Context**: Support resolving and switching a player's active character per guild/chronicle.
 - [ ] **Mechanics Content Registry Integration (`@realm/content`)**: Load clans, disciplines, banes, predator types, and powers from `packages/content/collections/mechanics/` so creation wizards and sheet editors are driven by static MDX content rather than hardcoded arrays.
 - [ ] **Splat-Specific Sub-Coordinators & Recipes**:
-  - Expand V5 (`Vampire5th`), V20 (`Vampire20th`), W5, H5, and CofD creation steps and sheet tabs (Attributes, Skills, Disciplines/Powers, Merits/Backgrounds, Experience expenditure).
-  - Add safe character deletion confirmation flow.
+  - Expand creation steps and sheet tabs for Disciplines/Powers, Merits/Backgrounds, and Experience expenditure across splats.
 
 ---
 

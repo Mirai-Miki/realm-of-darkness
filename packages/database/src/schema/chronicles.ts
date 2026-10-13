@@ -11,6 +11,7 @@ import {
   GuildNameConstraints,
   DiscordCdnUrlMaxLength,
   SnowflakeSchema,
+  GameEditionSchema,
 } from "@realm/common";
 import { snowflake } from "../schema.types";
 import { chronicleMembers } from "./chronicle-members";
@@ -25,6 +26,8 @@ export const chronicles = pgTable("chronicles", {
     length: GuildNameConstraints.MaxLength,
   }).notNull(),
   iconUrl: varchar({ length: DiscordCdnUrlMaxLength }).notNull().default(""),
+  defaultVersion: varchar({ length: 16 }).notNull().default("5th"),
+  storytellerRoleIds: snowflake().array().notNull().default([]),
 
   createdAt: timestamp().defaultNow().notNull(),
   lastUpdated: timestamp().defaultNow().notNull(),
@@ -50,6 +53,8 @@ export type ChronicleDb = InferSelectModel<typeof chronicles>;
  */
 export const selectChronicleSchema = createSelectSchema(chronicles, {
   id: SnowflakeSchema,
+  defaultVersion: GameEditionSchema,
+  storytellerRoleIds: SnowflakeSchema.array(),
 });
 export type SelectChronicleData = z.infer<typeof selectChronicleSchema>;
 
@@ -58,6 +63,8 @@ export type SelectChronicleData = z.infer<typeof selectChronicleSchema>;
  */
 export const insertChronicleSchema = createInsertSchema(chronicles, {
   id: SnowflakeSchema,
+  defaultVersion: GameEditionSchema.optional(),
+  storytellerRoleIds: SnowflakeSchema.array().optional(),
 });
 export type InsertChronicleData = z.infer<typeof insertChronicleSchema>;
 
@@ -66,5 +73,7 @@ export type InsertChronicleData = z.infer<typeof insertChronicleSchema>;
  */
 export const updateChronicleSchema = createUpdateSchema(chronicles, {
   id: SnowflakeSchema,
+  defaultVersion: GameEditionSchema.optional(),
+  storytellerRoleIds: SnowflakeSchema.array().optional(),
 });
 export type UpdateChronicleData = z.infer<typeof updateChronicleSchema>;

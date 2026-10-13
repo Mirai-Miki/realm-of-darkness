@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm typecheck && tsup",
+    "build": "tsc -b tsconfig.build.json && tsup",
     "clean": "rimraf dist coverage .turbo",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",

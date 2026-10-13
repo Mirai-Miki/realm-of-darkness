@@ -113,4 +113,12 @@ export interface IStorytellerRepository {
    * @returns Array of provider strings
    */
   getProviders(chronicleId: Snowflake, userId: Snowflake): Promise<string[]>;
+
+  /**
+   * Find all storyteller grants for a specific chronicle.
+   *
+   * @param chronicleId - Chronicle snowflake ID
+   * @returns Array of storyteller grant data
+   */
+  findByChronicle(chronicleId: Snowflake): Promise<StorytellerData[]>;
 }

@@ -11,14 +11,19 @@ import type {
   CreateChronicleInput,
 } from "@realm/common";
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import {
   db,
   chronicles,
   insertChronicleSchema,
   updateChronicleSchema,
 } from "@realm/database";
-import { RealmError, SnowflakeSchema, generateSnowflake } from "@realm/common";
+import {
+  RealmError,
+  SnowflakeSchema,
+  generateSnowflake,
+  GameEdition,
+} from "@realm/common";
 import { hasDataChanged } from "./repository.utilities";
 
 function toChronicleData(db: ChronicleDb): ChronicleData {
@@ -26,6 +31,10 @@ function toChronicleData(db: ChronicleDb): ChronicleData {
     id: db.id,
     name: db.name,
     iconUrl: db.iconUrl,
+    defaultVersion: (db.defaultVersion as GameEdition) ?? GameEdition.Fifth,
+    storytellerRoleIds: Array.isArray(db.storytellerRoleIds)
+      ? [...db.storytellerRoleIds]
+      : [],
     createdAt: db.createdAt,
     lastUpdated: db.lastUpdated,
   };
@@ -67,6 +76,24 @@ export class ChronicleRepository implements IChronicleRepository {
     }
   }
 
+  public async findManyByIds(ids: Snowflake[]): Promise<ChronicleData[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    try {
+      const validatedIds = ids.map((id) => SnowflakeSchema.parse(id));
+      const results = await db
+        .select()
+        .from(chronicles)
+        .where(inArray(chronicles.id, validatedIds));
+      return results.map(toChronicleData);
+    } catch (error) {
+      throw new RealmError("Failed to find chronicles by IDs", {
+        cause: error,
+      });
+    }
+  }
+
   public async create(input: CreateChronicleInput): Promise<ChronicleData> {
     const chronicleId = generateSnowflake();
     try {
@@ -74,6 +101,8 @@ export class ChronicleRepository implements IChronicleRepository {
         id: chronicleId,
         name: input.name,
         iconUrl: input.iconUrl || "",
+        defaultVersion: input.defaultVersion ?? GameEdition.Fifth,
+        storytellerRoleIds: input.storytellerRoleIds ?? [],
       };
       const validatedData = insertChronicleSchema.parse(dbRecord);
       const [result] = await db
@@ -137,6 +166,14 @@ export class ChronicleRepository implements IChronicleRepository {
           input.iconUrl !== undefined
             ? input.iconUrl
             : currentChronicle.iconUrl,
+        defaultVersion:
+          input.defaultVersion !== undefined
+            ? input.defaultVersion
+            : (currentChronicle.defaultVersion as GameEdition),
+        storytellerRoleIds:
+          input.storytellerRoleIds !== undefined
+            ? input.storytellerRoleIds
+            : currentChronicle.storytellerRoleIds,
         lastUpdated: new Date(),
       };
 

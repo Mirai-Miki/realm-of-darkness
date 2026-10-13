@@ -23,6 +23,7 @@ export { SystemRepository } from "./system.repository";
 
 export { CharacterRepository } from "./character.repository";
 export { ChronicleRepository } from "./chronicle.repository";
+export { StorytellerRepository } from "./storyteller.repository";
 export {
   InteractionSessionRepository,
   parseSessionRow,

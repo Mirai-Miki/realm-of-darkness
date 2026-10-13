@@ -73,6 +73,72 @@ export abstract class Character20th
     return this._skills;
   }
 
+  /**
+   * Applies bashing, lethal, and/or aggravated damage to Health.
+   *
+   * @param damage - Object containing optional bashing, lethal, and/or aggravated amounts
+   */
+  public takeHealthDamage(damage: {
+    bashing?: number;
+    lethal?: number;
+    aggravated?: number;
+  }): void {
+    this._health = this._health.takeDamage(damage);
+  }
+
+  /**
+   * Heals bashing, lethal, and/or aggravated damage from Health.
+   *
+   * @param heal - Object containing optional bashing, lethal, and/or aggravated amounts
+   */
+  public healHealthDamage(heal: {
+    bashing?: number;
+    lethal?: number;
+    aggravated?: number;
+  }): void {
+    this._health = this._health.heal(heal);
+  }
+
+  /**
+   * Sets damage values on Health directly.
+   *
+   * @param damage - Object containing optional bashing, lethal, and/or aggravated values
+   */
+  public setHealthDamage(damage: {
+    bashing?: number;
+    lethal?: number;
+    aggravated?: number;
+  }): void {
+    this._health = this._health.setCurrent(damage);
+  }
+
+  /**
+   * Spends temporary Willpower points.
+   *
+   * @param amount - Points to spend
+   */
+  public spendWillpower(amount: number): void {
+    this._willpower = this._willpower.spend(amount);
+  }
+
+  /**
+   * Restores temporary Willpower points.
+   *
+   * @param amount - Points to restore
+   */
+  public restoreWillpower(amount: number): void {
+    this._willpower = this._willpower.restore(amount);
+  }
+
+  /**
+   * Sets current temporary Willpower directly.
+   *
+   * @param value - New current value
+   */
+  public setWillpowerCurrent(value: number): void {
+    this._willpower = this._willpower.setCurrent(value);
+  }
+
   // ============================================================================
   // Serialization
   // ============================================================================
@@ -80,6 +146,10 @@ export abstract class Character20th
   override toData(): Character20thData {
     return {
       ...super.toData(),
+      experience: {
+        current: this._experience.current,
+        total: this._experience.total,
+      },
       health: {
         total: this._health.total,
         bashing: this._health.bashing,

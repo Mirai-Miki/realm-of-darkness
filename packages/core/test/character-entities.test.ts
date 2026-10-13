@@ -24,7 +24,11 @@ describe("Character Domain Entities", () => {
     themeColor: "#000000",
     createdAt: new Date(),
     lastUpdated: new Date(),
+    experience: { current: 0, total: 0 },
     hunger: 1,
+    humanity: { total: 7, stains: 0 },
+    bloodPotency: 1,
+    generation: 13,
     health: { total: 6, superficial: 0, aggravated: 0 },
     willpower: { total: 5, superficial: 0, aggravated: 0 },
     attributes: {

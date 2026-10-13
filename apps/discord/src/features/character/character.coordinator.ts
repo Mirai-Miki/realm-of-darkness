@@ -4,7 +4,18 @@ import {
   UserError,
   RealmError,
 } from "@realm/common";
-import { InteractionSessionRepository } from "@realm/repositories";
+import {
+  CharacterRepository,
+  InteractionSessionRepository,
+} from "@realm/repositories";
+import {
+  Character20th,
+  Character5th,
+  CharacterFactory,
+  Vampire20th,
+  Vampire5th,
+  Werewolf5th,
+} from "@realm/core";
 import { logger } from "@realm/logger";
 import {
   Coordinator,
@@ -17,27 +28,33 @@ import {
   CharacterQuickAction,
   CharacterQuickActionSchema,
   CharacterSessionStateDataSchema,
+  CharacterSheetTab,
   CharacterWorkflowStep,
 } from "./character-session.definitions";
+import type { CharacterSessionStateData } from "./character-session.definitions";
 import {
   CHARACTER_HANDLER_ID,
   CharacterCancelledRecipe,
+  CharacterDeleteConfirmRecipe,
+  CharacterDeletedRecipe,
   CharacterEditorHomeRecipe,
+  CharacterTraitsRecipe,
   ConfirmCreateCharacterRecipe,
   EditCharacterBioModalRecipe,
-  SelectClanRecipe,
   SelectSplatRecipe,
 } from "./character.recipes";
-import { mockCharacterService } from "./mock-character.service";
 import type {
   AutocompleteContext,
   CommandContext,
   InterfaceContext,
 } from "../../framework";
-import type { Snowflake } from "@realm/common";
+import type {
+  CharacterData,
+  ICharacterRepository,
+  Snowflake,
+} from "@realm/common";
 import type { NormalizedRenderEnvelope } from "../../ui";
-import type { CharacterSessionStateData } from "./character-session.definitions";
-import type { MockCharacterService } from "./mock-character.service";
+import type { CharacterEntity } from "@realm/core";
 
 /**
  * Unified Coordinator for the `/character` command and all of its context-sensitive
@@ -49,8 +66,10 @@ import type { MockCharacterService } from "./mock-character.service";
  * 2. **PostgreSQL Stateless Sessions**: All wizard and editor state is stored in
  *    `interaction_sessions` via `InteractionSessionRepository` with a single uniform
  *    `customId` format (`character:{sessionId}:{control}`).
- * 3. **Pure Render Engine Return Flow**: Returns `renderEngine.build(Recipe, props)`
- *    without performing any direct Discord `reply`, `editReply`, or `showModal` API calls.
+ * 3. **Authoritative Domain Persistence**: Hydrates real domain entities via `CharacterFactory`
+ *    and persists changes to PostgreSQL through `CharacterRepository`.
+ * 4. **Pure Render Engine Return Flow**: Returns `renderEngine.build(Recipe, props)`
+ *    without performing direct Discord API calls.
  */
 export class CharacterCoordinator extends Coordinator {
   /**
@@ -59,21 +78,21 @@ export class CharacterCoordinator extends Coordinator {
   public readonly data = buildSlashCommandFromMdx(CHARACTER_HANDLER_ID);
 
   private readonly sessionRepo: InteractionSessionRepository;
-  private readonly characterService: MockCharacterService;
+  private readonly characterRepo: ICharacterRepository;
 
   /**
    * Creates a new `CharacterCoordinator` instance.
    *
    * @param sessionRepo - Repository for PostgreSQL interaction session persistence
-   * @param characterService - Service managing character records
+   * @param characterRepo - Repository for PostgreSQL character data persistence
    */
   constructor(
     sessionRepo?: InteractionSessionRepository,
-    characterService?: MockCharacterService
+    characterRepo?: ICharacterRepository
   ) {
     super();
     this.sessionRepo = sessionRepo ?? new InteractionSessionRepository();
-    this.characterService = characterService ?? mockCharacterService;
+    this.characterRepo = characterRepo ?? new CharacterRepository();
   }
 
   /**
@@ -92,11 +111,6 @@ export class CharacterCoordinator extends Coordinator {
    * @param ctx - The Discord command context
    * @returns Normalized render envelope for either Editor Home or Confirm Create
    * @throws {UserError} If the entered character name fails validation
-   *
-   * @example
-   * ```typescript
-   * const envelope = await characterCoordinator.execute(ctx);
-   * ```
    */
   public async execute(ctx: CommandContext): Promise<NormalizedRenderEnvelope> {
     const { interaction } = ctx;
@@ -117,18 +131,25 @@ export class CharacterCoordinator extends Coordinator {
 
     const characterName = nameValidation.data;
     const userId = this.resolveActorId(ctx);
-    const existingCharacter = this.characterService.findByName(
-      userId,
-      characterName
+    const userCharacters = await this.characterRepo.findByUser(userId);
+    const existing = userCharacters.find(
+      (c) => c.name.toLowerCase() === characterName.toLowerCase()
     );
 
-    if (existingCharacter) {
+    if (existing) {
       const session = await this.sessionRepo.create(
         {
           userId,
           handlerId: this.handlerId,
           step: CharacterWorkflowStep.EditorHome,
-          state: existingCharacter,
+          state: {
+            characterId: existing.id,
+            characterName: existing.name,
+            splat: existing.splat,
+            activeTab: CharacterSheetTab.Trackers,
+            concept: "Unwritten Soul",
+            ambition: "Survive the night",
+          },
         },
         CharacterSessionStateDataSchema
       );
@@ -136,14 +157,17 @@ export class CharacterCoordinator extends Coordinator {
       logger.info("Opened existing character in interactive editor", {
         fields: {
           userId,
-          characterName: existingCharacter.characterName,
+          characterName: existing.name,
+          characterId: existing.id,
           sessionId: session.id,
         },
       });
 
       return renderEngine.build(CharacterEditorHomeRecipe, {
         sessionId: session.id,
-        state: session.state,
+        character: existing,
+        concept: session.state.concept,
+        ambition: session.state.ambition,
       });
     }
 
@@ -181,24 +205,19 @@ export class CharacterCoordinator extends Coordinator {
    * matching characters from the user's roster.
    *
    * @param ctx - The Discord autocomplete context
-   *
-   * @example
-   * ```typescript
-   * await characterCoordinator.autocomplete(ctx);
-   * ```
    */
-  public async autocomplete(ctx: AutocompleteContext): Promise<void> {
+  public override async autocomplete(ctx: AutocompleteContext): Promise<void> {
     const { interaction } = ctx;
     const focused = interaction.options.getFocused().toLowerCase();
     const userId = this.resolveActorId(ctx);
 
-    const characters = this.characterService.findByUser(userId);
+    const characters = await this.characterRepo.findByUser(userId);
     const matches = characters
-      .filter((c) => c.characterName.toLowerCase().includes(focused))
+      .filter((c) => c.name.toLowerCase().includes(focused))
       .slice(0, 25)
       .map((c) => ({
-        name: `${c.characterName} (${c.clan ?? "Unknown"})`,
-        value: c.characterName,
+        name: `${c.name} (${c.splat})`,
+        value: c.name,
       }));
 
     await interaction.respond(matches);
@@ -212,11 +231,6 @@ export class CharacterCoordinator extends Coordinator {
    * @returns Normalized render envelope for the next screen or modal
    * @throws {UserError} If the session has expired or an invalid option was chosen
    * @throws {RealmError} If an unknown control identifier is encountered
-   *
-   * @example
-   * ```typescript
-   * const envelope = await characterCoordinator.handleInterface(ctx);
-   * ```
    */
   public async handleInterface(
     ctx: InterfaceContext
@@ -231,7 +245,7 @@ export class CharacterCoordinator extends Coordinator {
       userId
     );
 
-    // Check if the user selected "Open Bio Modal" from the quick action dropdown
+    // Modal quick action handler
     if (
       control === CharacterControl.QuickActionMenu &&
       interaction.isStringSelectMenu() &&
@@ -239,11 +253,16 @@ export class CharacterCoordinator extends Coordinator {
     ) {
       return renderEngine.build(EditCharacterBioModalRecipe, {
         sessionId: session.id,
-        state: session.state,
+        characterName: session.state.characterName,
+        concept: session.state.concept,
+        ambition: session.state.ambition,
       });
     }
 
     switch (control) {
+      // ----------------------------------------------------------------------
+      // Creation Wizard
+      // ----------------------------------------------------------------------
       case CharacterControl.ConfirmCreateYes: {
         const updated = await this.sessionRepo.update(
           session.id,
@@ -272,115 +291,143 @@ export class CharacterCoordinator extends Coordinator {
           throw new UserError("Please select a valid character game line.");
         }
 
-        const nextState: CharacterSessionStateData = {
-          ...session.state,
+        // Initialize and persist default character in database
+        const defaultData = CharacterFactory.createDefaultData({
+          userId,
+          name: session.state.characterName,
           splat: parsedSplat.data,
-        };
+        });
+        const created = await this.characterRepo.create(defaultData);
 
         const updated = await this.sessionRepo.update(
           session.id,
           {
-            step: CharacterWorkflowStep.SelectClan,
-            state: nextState,
+            step: CharacterWorkflowStep.EditorHome,
+            state: {
+              ...session.state,
+              characterId: created.id,
+              splat: created.splat,
+              activeTab: CharacterSheetTab.Trackers,
+              lastActionBanner: `✨ Created **${created.name}**! Use the controls below to manage your sheet.`,
+            },
           },
           CharacterSessionStateDataSchema
         );
 
-        return renderEngine.build(SelectClanRecipe, {
+        return renderEngine.build(CharacterEditorHomeRecipe, {
           sessionId: updated.id,
-          state: updated.state,
+          character: created,
+          concept: updated.state.concept,
+          ambition: updated.state.ambition,
+          bannerText: updated.state.lastActionBanner,
         });
       }
 
-      case CharacterControl.SelectClanMenu: {
-        if (!interaction.isStringSelectMenu()) {
-          throw new RealmError("Expected StringSelectMenu for clan selection");
-        }
-        const selectedClan = interaction.values[0];
-        if (!selectedClan) {
-          throw new UserError("Please select a valid Clan.");
-        }
-
-        const completedState: CharacterSessionStateData = {
-          ...session.state,
-          clan: selectedClan,
-          lastActionBanner: `✨ Created **${session.state.characterName}** (${selectedClan})! Use the controls below to manage your sheet.`,
-        };
-
-        return this.persistAndBuildEditorEnvelope(
-          userId,
-          session.id,
-          completedState
+      // ----------------------------------------------------------------------
+      // Sheet Tab Navigation
+      // ----------------------------------------------------------------------
+      case CharacterControl.TabTrackers: {
+        const character = await this.loadAuthoritativeCharacter(
+          session.state.characterId
         );
+        const updated = await this.sessionRepo.update(
+          session.id,
+          {
+            step: CharacterWorkflowStep.EditorHome,
+            state: { ...session.state, activeTab: CharacterSheetTab.Trackers },
+          },
+          CharacterSessionStateDataSchema
+        );
+
+        return renderEngine.build(CharacterEditorHomeRecipe, {
+          sessionId: updated.id,
+          character,
+          concept: updated.state.concept,
+          ambition: updated.state.ambition,
+          bannerText: updated.state.lastActionBanner,
+        });
       }
 
-      case CharacterControl.DecreaseHunger:
-      case CharacterControl.IncreaseHunger: {
-        const delta = control === CharacterControl.IncreaseHunger ? 1 : -1;
-        const nextHunger = Math.max(
-          0,
-          Math.min(5, session.state.hunger + delta)
+      case CharacterControl.TabTraits: {
+        const character = await this.loadAuthoritativeCharacter(
+          session.state.characterId
         );
-
-        const nextState: CharacterSessionStateData = {
-          ...session.state,
-          hunger: nextHunger,
-          lastActionBanner: `🩸 Adjusted **Hunger** to **${nextHunger}/5**.`,
-        };
-
-        return this.persistAndBuildEditorEnvelope(
-          userId,
+        const updated = await this.sessionRepo.update(
           session.id,
-          nextState
+          {
+            step: CharacterWorkflowStep.TraitsTab,
+            state: { ...session.state, activeTab: CharacterSheetTab.Traits },
+          },
+          CharacterSessionStateDataSchema
         );
+
+        return renderEngine.build(CharacterTraitsRecipe, {
+          sessionId: updated.id,
+          character,
+          concept: updated.state.concept,
+          ambition: updated.state.ambition,
+          bannerText: updated.state.lastActionBanner,
+        });
       }
 
-      case CharacterControl.DecreaseWillpower:
-      case CharacterControl.IncreaseWillpower: {
-        const delta = control === CharacterControl.IncreaseWillpower ? 1 : -1;
-        const nextWp = Math.max(
-          0,
-          Math.min(
-            session.state.willpowerMax,
-            session.state.willpowerSuperficial + delta
-          )
+      case CharacterControl.TabDelete: {
+        const character = await this.loadAuthoritativeCharacter(
+          session.state.characterId
         );
-
-        const nextState: CharacterSessionStateData = {
-          ...session.state,
-          willpowerSuperficial: nextWp,
-          lastActionBanner: `🧠 Adjusted **Superficial Willpower Damage** to **${nextWp}/${session.state.willpowerMax}**.`,
-        };
-
-        return this.persistAndBuildEditorEnvelope(
-          userId,
+        const updated = await this.sessionRepo.update(
           session.id,
-          nextState
+          {
+            step: CharacterWorkflowStep.DeleteConfirm,
+            state: { ...session.state, activeTab: CharacterSheetTab.Delete },
+          },
+          CharacterSessionStateDataSchema
         );
+
+        return renderEngine.build(CharacterDeleteConfirmRecipe, {
+          sessionId: updated.id,
+          character,
+          concept: updated.state.concept,
+          ambition: updated.state.ambition,
+        });
       }
 
-      case CharacterControl.QuickActionMenu: {
-        if (!interaction.isStringSelectMenu()) {
-          throw new RealmError("Expected StringSelectMenu for quick action");
+      // ----------------------------------------------------------------------
+      // Character Deletion
+      // ----------------------------------------------------------------------
+      case CharacterControl.DeleteConfirmYes: {
+        if (session.state.characterId) {
+          await this.characterRepo.delete(session.state.characterId);
         }
-        const parsedAction = CharacterQuickActionSchema.safeParse(
-          interaction.values[0]
-        );
-        if (!parsedAction.success) {
-          throw new UserError("Invalid quick action selected.");
-        }
-
-        const nextState = this.applyQuickAction(
-          session.state,
-          parsedAction.data
-        );
-        return this.persistAndBuildEditorEnvelope(
-          userId,
-          session.id,
-          nextState
-        );
+        await this.sessionRepo.delete(session.id);
+        return renderEngine.build(CharacterDeletedRecipe, {
+          characterName: session.state.characterName,
+        });
       }
 
+      case CharacterControl.DeleteConfirmCancel: {
+        const character = await this.loadAuthoritativeCharacter(
+          session.state.characterId
+        );
+        const updated = await this.sessionRepo.update(
+          session.id,
+          {
+            step: CharacterWorkflowStep.EditorHome,
+            state: { ...session.state, activeTab: CharacterSheetTab.Trackers },
+          },
+          CharacterSessionStateDataSchema
+        );
+
+        return renderEngine.build(CharacterEditorHomeRecipe, {
+          sessionId: updated.id,
+          character,
+          concept: updated.state.concept,
+          ambition: updated.state.ambition,
+        });
+      }
+
+      // ----------------------------------------------------------------------
+      // Bio Modal Submission
+      // ----------------------------------------------------------------------
       case CharacterControl.EditBioModal: {
         if (!interaction.isModalSubmit()) {
           throw new RealmError("Expected ModalSubmitInteraction for bio modal");
@@ -394,17 +441,52 @@ export class CharacterCoordinator extends Coordinator {
           throw new UserError("Both Concept and Ambition are required.");
         }
 
-        const nextState: CharacterSessionStateData = {
-          ...session.state,
-          concept,
-          ambition,
-          lastActionBanner: `✏️ Updated biography traits (**Concept** & **Ambition**).`,
-        };
-
-        return this.persistAndBuildEditorEnvelope(
-          userId,
+        const character = await this.loadAuthoritativeCharacter(
+          session.state.characterId
+        );
+        const updated = await this.sessionRepo.update(
           session.id,
-          nextState
+          {
+            state: {
+              ...session.state,
+              concept,
+              ambition,
+              lastActionBanner: `✏️ Updated biography traits (**Concept** & **Ambition**).`,
+            },
+          },
+          CharacterSessionStateDataSchema
+        );
+
+        return renderEngine.build(CharacterEditorHomeRecipe, {
+          sessionId: updated.id,
+          character,
+          concept: updated.state.concept,
+          ambition: updated.state.ambition,
+          bannerText: updated.state.lastActionBanner,
+        });
+      }
+
+      // ----------------------------------------------------------------------
+      // Tracker Adjustments & Quick Actions
+      // ----------------------------------------------------------------------
+      case CharacterControl.DecreaseHunger:
+      case CharacterControl.IncreaseHunger:
+      case CharacterControl.DecreaseWillpower:
+      case CharacterControl.IncreaseWillpower:
+      case CharacterControl.DecreaseRage:
+      case CharacterControl.IncreaseRage:
+      case CharacterControl.ShiftCrinos:
+      case CharacterControl.ShiftHomid:
+      case CharacterControl.SpendBlood:
+      case CharacterControl.SlakeBlood:
+      case CharacterControl.SpendWillpower:
+      case CharacterControl.RestoreWillpower:
+      case CharacterControl.QuickActionMenu: {
+        return this.handleTrackerAction(
+          session.id,
+          session.state,
+          control,
+          interaction.isStringSelectMenu() ? interaction.values[0] : undefined
         );
       }
 
@@ -416,83 +498,207 @@ export class CharacterCoordinator extends Coordinator {
   }
 
   /**
-   * Executes a quick action selected from the Editor Home dropdown (e.g., Rouse Check or Mend).
+   * Loads an authoritative character from `CharacterRepository` or throws UserError.
    */
-  private applyQuickAction(
-    state: CharacterSessionStateData,
-    action: CharacterQuickAction
-  ): CharacterSessionStateData {
-    // Perform a 1d10 Rouse Check ( >= 6 succeeds )
-    const die = Math.floor(Math.random() * 10) + 1;
-    const isSuccess = die >= 6;
-
-    if (action === CharacterQuickAction.RouseCheck) {
-      const nextHunger = isSuccess
-        ? state.hunger
-        : Math.min(5, state.hunger + 1);
-      const outcomeText = isSuccess
-        ? `🎲 **Rouse Check Success!** Rolled **[${die}]** — Hunger remains at **${nextHunger}/5**.`
-        : `🎲 **Rouse Check Failed!** Rolled **[${die}]** — Hunger increased to **${nextHunger}/5**!`;
-
-      return {
-        ...state,
-        hunger: nextHunger,
-        lastActionBanner: outcomeText,
-      };
+  private async loadAuthoritativeCharacter(
+    characterId?: Snowflake
+  ): Promise<CharacterData> {
+    if (!characterId) {
+      throw new UserError(
+        "Character session lost or invalid. Please re-run /character."
+      );
     }
-
-    if (action === CharacterQuickAction.MendSuperficial) {
-      if (state.healthSuperficial <= 0) {
-        return {
-          ...state,
-          lastActionBanner: `🩹 **Mend Skipped:** ${state.characterName} has no Superficial Health damage to mend.`,
-        };
-      }
-
-      const nextHunger = isSuccess
-        ? state.hunger
-        : Math.min(5, state.hunger + 1);
-      const nextHealth = Math.max(0, state.healthSuperficial - 1);
-      const rouseNote = isSuccess
-        ? `Rouse Check succeeded (**[${die}]**)`
-        : `Rouse Check failed (**[${die}]**, Hunger +1)`;
-
-      return {
-        ...state,
-        hunger: nextHunger,
-        healthSuperficial: nextHealth,
-        lastActionBanner: `🩹 **Mended 1 Superficial Health!** ${rouseNote}.`,
-      };
+    const found = await this.characterRepo.findById(characterId);
+    if (!found) {
+      throw new UserError("Character not found in database.");
     }
-
-    return state;
+    return found;
   }
 
   /**
-   * Saves the updated character state to both the mock character store and the
-   * PostgreSQL interaction session, then returns the pure `NormalizedRenderEnvelope`
-   * for the Editor Home dashboard.
+   * Applies domain entity mutations for tracker buttons and quick actions,
+   * persists to `CharacterRepository`, and returns the updated `CharacterEditorHomeRecipe`.
    */
-  private async persistAndBuildEditorEnvelope(
-    userId: Snowflake,
+  private async handleTrackerAction(
     sessionId: Snowflake,
-    nextState: CharacterSessionStateData
+    sessionState: CharacterSessionStateData,
+    control: string,
+    selectValue?: string
   ): Promise<NormalizedRenderEnvelope> {
-    this.characterService.save(userId, nextState);
+    const characterData = await this.loadAuthoritativeCharacter(
+      sessionState.characterId
+    );
+    const entity = CharacterFactory.create(characterData);
+    let bannerText = "Updated character tracker.";
 
-    const updated = await this.sessionRepo.update(
+    switch (control) {
+      // Vampire 5th: Hunger
+      case CharacterControl.IncreaseHunger:
+        if (entity instanceof Vampire5th) {
+          const next = entity.increaseHunger(1);
+          bannerText = `🩸 Adjusted **Hunger** to **${next}/5**.`;
+        }
+        break;
+
+      case CharacterControl.DecreaseHunger:
+        if (entity instanceof Vampire5th) {
+          const next = entity.decreaseHunger(1);
+          bannerText = `🩸 Adjusted **Hunger** to **${next}/5**.`;
+        }
+        break;
+
+      // Willpower adjustments
+      case CharacterControl.IncreaseWillpower:
+        if (entity instanceof Character5th) {
+          entity.takeWillpowerDamage({ superficial: 1 });
+          bannerText = `🧠 Adjusted **Superficial Willpower Damage** to **${entity.willpower.superficial}/${entity.willpower.total}**.`;
+        } else if (entity instanceof Character20th) {
+          entity.restoreWillpower(1);
+          bannerText = `🧠 Restored **Willpower** to **${entity.willpower.current}/${entity.willpower.total}**.`;
+        }
+        break;
+
+      case CharacterControl.DecreaseWillpower:
+        if (entity instanceof Character5th) {
+          entity.healWillpowerDamage({ superficial: 1 });
+          bannerText = `🧠 Healed **Superficial Willpower Damage** to **${entity.willpower.superficial}/${entity.willpower.total}**.`;
+        } else if (entity instanceof Character20th) {
+          entity.spendWillpower(1);
+          bannerText = `🧠 Spent **1 Willpower** (remaining: **${entity.willpower.current}/${entity.willpower.total}**).`;
+        }
+        break;
+
+      // Werewolf 5th: Rage & Form
+      case CharacterControl.IncreaseRage:
+        if (entity instanceof Werewolf5th) {
+          entity.increaseRage(1);
+          bannerText = `🐺 Adjusted **Rage** to **${entity.rage}/5**.`;
+        }
+        break;
+
+      case CharacterControl.DecreaseRage:
+        if (entity instanceof Werewolf5th) {
+          entity.decreaseRage(1);
+          bannerText = `🐺 Adjusted **Rage** to **${entity.rage}/5**.`;
+        }
+        break;
+
+      case CharacterControl.ShiftCrinos:
+        if (entity instanceof Werewolf5th) {
+          entity.setForm("Crinos");
+          bannerText = `🐺 Shifted into **Crinos** war form! (*Health total +4*).`;
+        }
+        break;
+
+      case CharacterControl.ShiftHomid:
+        if (entity instanceof Werewolf5th) {
+          entity.setForm("Homid");
+          bannerText = `👤 Reverted to **Homid** form.`;
+        }
+        break;
+
+      // Vampire 20th: Blood Pool
+      case CharacterControl.SpendBlood:
+        if (entity instanceof Vampire20th) {
+          entity.spendBlood(1);
+          bannerText = `🩸 Spent **1 Blood** (remaining: **${entity.bloodPool.current}/${entity.bloodPool.total}**).`;
+        }
+        break;
+
+      case CharacterControl.SlakeBlood:
+        if (entity instanceof Vampire20th) {
+          entity.slakeBlood(1);
+          bannerText = `🩸 Slaked blood (total: **${entity.bloodPool.current}/${entity.bloodPool.total}**).`;
+        }
+        break;
+
+      // Quick Action dropdown
+      case CharacterControl.QuickActionMenu: {
+        const parsed = CharacterQuickActionSchema.safeParse(selectValue);
+        if (!parsed.success) {
+          throw new UserError("Invalid quick action selected.");
+        }
+        bannerText = this.applyQuickAction(entity, parsed.data);
+        break;
+      }
+    }
+
+    const updatedData = await this.characterRepo.update(entity.toData());
+
+    const updatedSession = await this.sessionRepo.update(
       sessionId,
       {
-        step: CharacterWorkflowStep.EditorHome,
-        state: nextState,
+        state: { ...sessionState, lastActionBanner: bannerText },
       },
       CharacterSessionStateDataSchema
     );
 
     return renderEngine.build(CharacterEditorHomeRecipe, {
-      sessionId: updated.id,
-      state: updated.state,
+      sessionId: updatedSession.id,
+      character: updatedData,
+      concept: updatedSession.state.concept,
+      ambition: updatedSession.state.ambition,
+      bannerText,
     });
+  }
+
+  /**
+   * Applies quick action roll/mechanic to domain entity.
+   */
+  private applyQuickAction(entity: CharacterEntity, action: string): string {
+    const die = Math.floor(Math.random() * 10) + 1;
+    const isSuccess = die >= 6;
+
+    if (action === CharacterQuickAction.RouseCheck) {
+      if (entity instanceof Vampire5th) {
+        if (!isSuccess) {
+          entity.increaseHunger(1);
+          return `🎲 **Rouse Check Failed!** Rolled **[${die}]** — Hunger increased to **${entity.hunger}/5**!`;
+        }
+        return `🎲 **Rouse Check Success!** Rolled **[${die}]** — Hunger remains at **${entity.hunger}/5**.`;
+      }
+    }
+
+    if (action === CharacterQuickAction.MendSuperficial) {
+      if (entity instanceof Character5th) {
+        entity.healHealthDamage({ superficial: 1 });
+        if (entity instanceof Vampire5th) {
+          const rouseNote = isSuccess
+            ? `Rouse Check succeeded (**[${die}]**)`
+            : `Rouse Check failed (**[${die}]**, Hunger +1)`;
+          if (!isSuccess) {
+            entity.increaseHunger(1);
+          }
+          return `🩹 **Mended 1 Superficial Health!** ${rouseNote}.`;
+        }
+        return `🩹 **Mended 1 Superficial Health damage!**`;
+      }
+    }
+
+    if (
+      action === CharacterQuickAction.ShiftCrinos &&
+      entity instanceof Werewolf5th
+    ) {
+      entity.setForm("Crinos");
+      return `🐺 Shifted into **Crinos** war form! (*Health total +4*).`;
+    }
+
+    if (
+      action === CharacterQuickAction.ShiftHomid &&
+      entity instanceof Werewolf5th
+    ) {
+      entity.setForm("Homid");
+      return `👤 Reverted to **Homid** form.`;
+    }
+
+    if (action === CharacterQuickAction.HealDamage) {
+      if (entity instanceof Character20th) {
+        entity.healHealthDamage({ bashing: 1 });
+        return `🩹 Healed 1 damage box!`;
+      }
+    }
+
+    return "Executed quick action.";
   }
 }
 

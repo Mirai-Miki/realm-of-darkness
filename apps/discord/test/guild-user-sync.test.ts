@@ -1,5 +1,5 @@
 import { Collection } from "discord.js";
-import { RealmError } from "@realm/common";
+import { RealmError, GameEdition } from "@realm/common";
 import { User } from "@realm/core";
 import { CreateGuildAction, GuildSyncAction } from "../src/features/guild";
 import {
@@ -45,6 +45,8 @@ describe("Discord Guild, Chronicle & User Synchronization", () => {
     id: chronicleId,
     name: "Elysium Server",
     iconUrl: "https://cdn.discordapp.com/icons/111/icon.png",
+    defaultVersion: GameEdition.Fifth,
+    storytellerRoleIds: [],
     createdAt: now,
     lastUpdated: now,
   };
@@ -119,6 +121,7 @@ describe("Discord Guild, Chronicle & User Synchronization", () => {
     chronicleRepo: {
       findById: jest.fn(),
       findAllIds: jest.fn(),
+      findManyByIds: jest.fn().mockResolvedValue([sampleChronicleData]),
       create: jest.fn().mockResolvedValue(sampleChronicleData),
       update: jest.fn(),
       upsert: jest.fn(),

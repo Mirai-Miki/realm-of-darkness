@@ -1,7 +1,10 @@
 import type { ICharacter } from "../character.definitions";
 
 import { z } from "zod";
-import { BaseCharacterDataSchema } from "../character.definitions";
+import {
+  BaseCharacterDataSchema,
+  ExperienceTrackerSchema,
+} from "../character.definitions";
 
 // ============================================================================
 // 5th Edition Character Constraints & Schema
@@ -98,6 +101,7 @@ export const DamageTracker5thDataSchema = z
 export type DamageTracker5thData = z.infer<typeof DamageTracker5thDataSchema>;
 
 export const Character5thSheetSchema = z.object({
+  experience: ExperienceTrackerSchema.default({ current: 0, total: 0 }),
   health: DamageTracker5thDataSchema,
   willpower: DamageTracker5thDataSchema,
   attributes: Wod5AttributesDataSchema,
@@ -127,6 +131,23 @@ export interface ICharacter5th extends ICharacter {
 
   // Skills (value objects)
   get skills(): Wod5SkillsData;
+
+  takeHealthDamage(damage: { superficial?: number; aggravated?: number }): void;
+  healHealthDamage(heal: { superficial?: number; aggravated?: number }): void;
+  setHealthDamage(damage: { superficial?: number; aggravated?: number }): void;
+
+  takeWillpowerDamage(damage: {
+    superficial?: number;
+    aggravated?: number;
+  }): void;
+  healWillpowerDamage(heal: {
+    superficial?: number;
+    aggravated?: number;
+  }): void;
+  setWillpowerDamage(damage: {
+    superficial?: number;
+    aggravated?: number;
+  }): void;
 
   toData(): Character5thData;
 }

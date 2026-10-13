@@ -65,6 +65,98 @@ export abstract class Character5th extends Character implements ICharacter5th {
     return this._skills;
   }
 
+  /**
+   * Applies superficial and/or aggravated damage to Health.
+   *
+   * @param damage - Object containing optional superficial and/or aggravated amounts
+   */
+  public takeHealthDamage(damage: {
+    superficial?: number;
+    aggravated?: number;
+  }): void {
+    if (damage.superficial) {
+      this._health = this._health.takeSuperficial(damage.superficial);
+    }
+    if (damage.aggravated) {
+      this._health = this._health.takeAggravated(damage.aggravated);
+    }
+  }
+
+  /**
+   * Heals superficial and/or aggravated damage from Health.
+   *
+   * @param heal - Object containing optional superficial and/or aggravated amounts to heal
+   */
+  public healHealthDamage(heal: {
+    superficial?: number;
+    aggravated?: number;
+  }): void {
+    if (heal.superficial) {
+      this._health = this._health.healSuperficial(heal.superficial);
+    }
+    if (heal.aggravated) {
+      this._health = this._health.healAggravated(heal.aggravated);
+    }
+  }
+
+  /**
+   * Sets superficial and/or aggravated damage on Health directly.
+   *
+   * @param damage - Object containing optional superficial and/or aggravated values
+   */
+  public setHealthDamage(damage: {
+    superficial?: number;
+    aggravated?: number;
+  }): void {
+    this._health = this._health.setDamage(damage);
+  }
+
+  /**
+   * Applies superficial and/or aggravated damage to Willpower.
+   *
+   * @param damage - Object containing optional superficial and/or aggravated amounts
+   */
+  public takeWillpowerDamage(damage: {
+    superficial?: number;
+    aggravated?: number;
+  }): void {
+    if (damage.superficial) {
+      this._willpower = this._willpower.takeSuperficial(damage.superficial);
+    }
+    if (damage.aggravated) {
+      this._willpower = this._willpower.takeAggravated(damage.aggravated);
+    }
+  }
+
+  /**
+   * Heals superficial and/or aggravated damage from Willpower.
+   *
+   * @param heal - Object containing optional superficial and/or aggravated amounts to heal
+   */
+  public healWillpowerDamage(heal: {
+    superficial?: number;
+    aggravated?: number;
+  }): void {
+    if (heal.superficial) {
+      this._willpower = this._willpower.healSuperficial(heal.superficial);
+    }
+    if (heal.aggravated) {
+      this._willpower = this._willpower.healAggravated(heal.aggravated);
+    }
+  }
+
+  /**
+   * Sets superficial and/or aggravated damage on Willpower directly.
+   *
+   * @param damage - Object containing optional superficial and/or aggravated values
+   */
+  public setWillpowerDamage(damage: {
+    superficial?: number;
+    aggravated?: number;
+  }): void {
+    this._willpower = this._willpower.setDamage(damage);
+  }
+
   // ============================================================================
   // Serialization
   // ============================================================================
@@ -72,6 +164,10 @@ export abstract class Character5th extends Character implements ICharacter5th {
   override toData(): Character5thData {
     return {
       ...super.toData(),
+      experience: {
+        current: this._experience.current,
+        total: this._experience.total,
+      },
       health: {
         total: this._health.total,
         superficial: this._health.superficial,

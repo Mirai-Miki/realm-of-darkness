@@ -34,10 +34,13 @@ export abstract class Character implements ICharacter {
     // Trust the data - already validated at boundary
     this.data = data;
 
-    // Initialize experience value object
+    // Initialize experience value object from data if provided
+    const expData = (
+      data as { experience?: { current: number; total: number } }
+    ).experience;
     this._experience = new Experience({
-      current: 0,
-      total: 0,
+      current: expData?.current ?? 0,
+      total: expData?.total ?? 0,
     });
   }
 

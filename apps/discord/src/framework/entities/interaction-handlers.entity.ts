@@ -49,10 +49,14 @@ export abstract class CommandHandler extends BaseInteractionHandler {
 
   /**
    * Handle autocomplete interactions for the command.
+   * Defaults to a no-op for commands without autocomplete options.
    *
-   * @param ctx - The typed autocomplete context
+   * @param _ctx - The typed autocomplete context
    */
-  abstract autocomplete?(ctx: AutocompleteContext): Promise<void>;
+  public autocomplete(_ctx: AutocompleteContext): Promise<void> {
+    void _ctx;
+    return Promise.resolve();
+  }
 }
 
 /**

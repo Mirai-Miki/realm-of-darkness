@@ -5,7 +5,7 @@ import {
   DiscordGuildChronicleRepository,
   DiscordGuildRepository,
 } from "@realm/repositories";
-import { CreateGuildAction } from "../../../features/guild";
+import { CreateGuildAction } from "../../../features/guild/create-guild.action";
 import type { BaseInteraction } from "discord.js";
 import type {
   IChronicleMemberRepository,

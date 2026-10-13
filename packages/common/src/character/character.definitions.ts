@@ -241,7 +241,10 @@ export const CharacterMetadataSchema = z.object({
   splat: SplatSchema,
   status: CharacterStatusSchema.default(CharacterStatus.Draft),
   avatarUrl: z.string().max(500).nullable().default(null),
-  themeColor: z.string().max(10).default("#000000"),
+  /**
+   * @deprecated Theme color will be replaced in future UI styling overhaul.
+   */
+  themeColor: z.string().max(10).optional().default("#000000"),
   createdAt: z.date().default(() => new Date()),
   lastUpdated: z.date().default(() => new Date()),
 });

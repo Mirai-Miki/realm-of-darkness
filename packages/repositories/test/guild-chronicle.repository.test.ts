@@ -90,6 +90,8 @@ describe("Guild & Chronicle Repositories", () => {
     id: chronicleId,
     name: "Realm Chronicle",
     iconUrl: "https://cdn.discordapp.com/icons/111/guild.png",
+    defaultVersion: "5th",
+    storytellerRoleIds: [],
     createdAt: now,
     lastUpdated: now,
   };

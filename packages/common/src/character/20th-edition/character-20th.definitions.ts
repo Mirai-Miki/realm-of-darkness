@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { BaseCharacterDataSchema } from "../character.definitions";
+import {
+  BaseCharacterDataSchema,
+  ExperienceTrackerSchema,
+} from "../character.definitions";
 import type { ICharacter } from "../character.definitions";
 import { Splat } from "../character.definitions";
 
@@ -125,6 +128,7 @@ export type WillpowerTracker20thData = z.infer<
 >;
 
 export const Character20thSheetSchema = z.object({
+  experience: ExperienceTrackerSchema.default({ current: 0, total: 0 }),
   health: HealthTracker20thDataSchema,
   willpower: WillpowerTracker20thDataSchema,
   attributes: Wod20AttributesDataSchema,
@@ -150,6 +154,26 @@ export interface ICharacter20th extends ICharacter {
   get health(): IHealthTracker20th;
   get attributes(): Wod20AttributesData;
   get skills(): Wod20SkillsData;
+
+  takeHealthDamage(damage: {
+    bashing?: number;
+    lethal?: number;
+    aggravated?: number;
+  }): void;
+  healHealthDamage(heal: {
+    bashing?: number;
+    lethal?: number;
+    aggravated?: number;
+  }): void;
+  setHealthDamage(damage: {
+    bashing?: number;
+    lethal?: number;
+    aggravated?: number;
+  }): void;
+
+  spendWillpower(amount: number): void;
+  restoreWillpower(amount: number): void;
+  setWillpowerCurrent(value: number): void;
 
   toData(): Character20thData;
 }

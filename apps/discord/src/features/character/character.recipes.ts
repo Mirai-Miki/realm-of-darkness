@@ -12,17 +12,20 @@ import {
   ActionBannerComponent,
   CharacterIdentityComponent,
   CharacterTrackersComponent,
+  CharacterTraitsComponent,
   ConfirmationBarComponent,
   DividerComponent,
+  SheetTabBarComponent,
   TextBlockComponent,
   TrackerQuickButtonsComponent,
 } from "../../ui";
 import {
   CharacterControl,
   CharacterQuickAction,
+  CharacterSheetTab,
 } from "./character-session.definitions";
 import type { ModalActionRowComponentBuilder } from "discord.js";
-import type { Snowflake } from "@realm/common";
+import type { CharacterData, Snowflake } from "@realm/common";
 import type { ScreenRecipe } from "../../ui";
 import type { CharacterSessionStateData } from "./character-session.definitions";
 
@@ -32,23 +35,9 @@ import type { CharacterSessionStateData } from "./character-session.definitions"
 export const CHARACTER_HANDLER_ID = "character";
 
 /**
- * Sample clans available during Step 2 of the mock creation wizard.
- */
-const AVAILABLE_CLANS = [
-  "Brujah",
-  "Gangrel",
-  "Lasombra",
-  "Malkavian",
-  "Nosferatu",
-  "Toreador",
-  "Tremere",
-  "Ventrue",
-] as const;
-
-/**
  * Formats a `Splat` enum key into a human-readable game line title.
  */
-function formatSplatLabel(key: string): string {
+export function formatSplatLabel(key: string): string {
   const match = key.match(/^([A-Za-z]+)(20th|5th|CoD)?$/);
   if (!match) return key;
 
@@ -69,13 +58,29 @@ function formatSplatLabel(key: string): string {
 }
 
 /**
- * Standard props passed into `/character` session screen recipes.
+ * Standard props passed into `/character` creation recipes.
  */
-export interface CharacterSessionRecipeProps {
+export interface CharacterCreationRecipeProps {
   /** PostgreSQL `interaction_sessions` Snowflake ID */
   sessionId: Snowflake;
   /** Current validated character session state */
   state: CharacterSessionStateData;
+}
+
+/**
+ * Standard props passed into `/character` interactive sheet editor recipes.
+ */
+export interface CharacterSheetRecipeProps {
+  /** PostgreSQL `interaction_sessions` Snowflake ID */
+  sessionId: Snowflake;
+  /** Full authoritative character record from repository */
+  character: CharacterData;
+  /** Current concept (from session or sheet) */
+  concept?: string;
+  /** Current ambition (from session or sheet) */
+  ambition?: string;
+  /** Optional status or roll banner */
+  bannerText?: string;
   /**
    * Optional flag indicating whether a secondary ephemeral tracker follow-up
    * should also be emitted alongside the primary response.
@@ -85,17 +90,9 @@ export interface CharacterSessionRecipeProps {
 
 /**
  * Screen Recipe: Typo-Prevention Confirmation Prompt when a character name does not exist yet.
- *
- * @param props - Session ID and draft state
- * @returns `RenderEnvelope`
- *
- * @example
- * ```typescript
- * renderEngine.build(ConfirmCreateCharacterRecipe, { sessionId, state })
- * ```
  */
 export const ConfirmCreateCharacterRecipe: ScreenRecipe<
-  CharacterSessionRecipeProps
+  CharacterCreationRecipeProps
 > = ({ sessionId, state }) => ({
   primary: {
     ephemeral: true,
@@ -104,7 +101,7 @@ export const ConfirmCreateCharacterRecipe: ScreenRecipe<
         content:
           `# New Character Detected\n\n` +
           `No character named **${state.characterName}** was found in your roster.\n` +
-          `Would you like to start creating **${state.characterName}** now?`,
+          `Would you like to create **${state.characterName}** now?`,
       }),
       DividerComponent(),
       ConfirmationBarComponent({
@@ -119,17 +116,9 @@ export const ConfirmCreateCharacterRecipe: ScreenRecipe<
 });
 
 /**
- * Screen Recipe: Step 1 of the Creation Wizard (Splat Selection).
- *
- * @param props - Session ID and draft state
- * @returns `RenderEnvelope`
- *
- * @example
- * ```typescript
- * renderEngine.build(SelectSplatRecipe, { sessionId, state })
- * ```
+ * Screen Recipe: Splat Selection (Step 1 of Creation Wizard).
  */
-export const SelectSplatRecipe: ScreenRecipe<CharacterSessionRecipeProps> = ({
+export const SelectSplatRecipe: ScreenRecipe<CharacterCreationRecipeProps> = ({
   sessionId,
   state,
 }) => {
@@ -159,9 +148,9 @@ export const SelectSplatRecipe: ScreenRecipe<CharacterSessionRecipeProps> = ({
       body: [
         TextBlockComponent({
           content:
-            `# Character Creation — Step 1 of 2\n\n` +
+            `# Character Creation\n\n` +
             `Creating **${state.characterName}**\n` +
-            `Select a game line (Splat) from the dropdown below:`,
+            `Select a game system from the dropdown below to initialize your character:`,
         }),
         DividerComponent(),
         selectRow,
@@ -171,84 +160,13 @@ export const SelectSplatRecipe: ScreenRecipe<CharacterSessionRecipeProps> = ({
 };
 
 /**
- * Screen Recipe: Step 2 of the Creation Wizard (Clan / Lineage Selection).
- *
- * @param props - Session ID and draft state
- * @returns `RenderEnvelope`
- *
- * @example
- * ```typescript
- * renderEngine.build(SelectClanRecipe, { sessionId, state })
- * ```
+ * Builds quick action dropdown options appropriate to the character's splat.
  */
-export const SelectClanRecipe: ScreenRecipe<CharacterSessionRecipeProps> = ({
-  sessionId,
-  state,
-}) => {
-  const clanMenu = new StringSelectMenuBuilder()
-    .setCustomId(
-      encodeSessionCustomId(
-        CHARACTER_HANDLER_ID,
-        sessionId,
-        CharacterControl.SelectClanMenu
-      )
-    )
-    .setPlaceholder("Choose a Clan...")
-    .addOptions(
-      AVAILABLE_CLANS.map((clan) =>
-        new StringSelectMenuOptionBuilder().setLabel(clan).setValue(clan)
-      )
-    );
+function buildQuickActionOptions(character: CharacterData) {
+  const options: StringSelectMenuOptionBuilder[] = [];
 
-  const selectRow =
-    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(clanMenu);
-
-  return {
-    primary: {
-      ephemeral: true,
-      body: [
-        TextBlockComponent({
-          content:
-            `# Character Creation — Step 2 of 2\n\n` +
-            `**Character:** ${state.characterName}\n` +
-            `**System:** \`${state.splat ?? Splat.Vampire5th}\`\n\n` +
-            `Select your character's Clan or Lineage to finalize creation and open the interactive sheet:`,
-        }),
-        DividerComponent(),
-        selectRow,
-      ],
-    },
-  };
-};
-
-/**
- * Screen Recipe: Interactive Character Editor Home Dashboard.
- *
- * Composes reusable UI Components (`CharacterIdentityComponent`, `CharacterTrackersComponent`,
- * `TrackerQuickButtonsComponent`) and supports conditional ephemeral `followUps` when
- * `emitTrackerFollowUp` is enabled.
- *
- * @param props - Session ID, character state, and optional follow-up flag
- * @returns `RenderEnvelope`
- *
- * @example
- * ```typescript
- * renderEngine.build(CharacterEditorHomeRecipe, { sessionId, state })
- * ```
- */
-export const CharacterEditorHomeRecipe: ScreenRecipe<
-  CharacterSessionRecipeProps
-> = ({ sessionId, state, emitTrackerFollowUp }) => {
-  const quickActionSelect = new StringSelectMenuBuilder()
-    .setCustomId(
-      encodeSessionCustomId(
-        CHARACTER_HANDLER_ID,
-        sessionId,
-        CharacterControl.QuickActionMenu
-      )
-    )
-    .setPlaceholder("⚡ Select a quick action or editor tool...")
-    .addOptions(
+  if (character.splat === Splat.Vampire5th) {
+    options.push(
       new StringSelectMenuOptionBuilder()
         .setLabel("🎲 Perform Rouse Check")
         .setDescription(
@@ -257,33 +175,89 @@ export const CharacterEditorHomeRecipe: ScreenRecipe<
         .setValue(CharacterQuickAction.RouseCheck),
       new StringSelectMenuOptionBuilder()
         .setLabel("🩹 Mend Superficial Health")
-        .setDescription(
-          "Perform a Rouse Check and heal 1 point of Superficial Health damage"
-        )
-        .setValue(CharacterQuickAction.MendSuperficial),
-      new StringSelectMenuOptionBuilder()
-        .setLabel("✏️ Edit Concept & Ambition (Modal)")
-        .setDescription(
-          "Open a popup form to update your character's biography traits"
-        )
-        .setValue(CharacterQuickAction.OpenBioModal)
+        .setDescription("Rouse blood to heal 1 superficial health damage")
+        .setValue(CharacterQuickAction.MendSuperficial)
     );
+  } else if (character.splat === Splat.Werewolf5th) {
+    const isCrinos = (character as { form?: string }).form === "Crinos";
+    options.push(
+      new StringSelectMenuOptionBuilder()
+        .setLabel(isCrinos ? "👤 Shift to Homid" : "🐺 Shift to Crinos")
+        .setDescription(
+          isCrinos
+            ? "Revert to human form (resets health modifier)"
+            : "Shift into war form (+4 Health boxes)"
+        )
+        .setValue(
+          isCrinos
+            ? CharacterQuickAction.ShiftHomid
+            : CharacterQuickAction.ShiftCrinos
+        ),
+      new StringSelectMenuOptionBuilder()
+        .setLabel("🩹 Mend Superficial Health")
+        .setDescription("Heal 1 superficial health damage")
+        .setValue(CharacterQuickAction.MendSuperficial)
+    );
+  } else {
+    options.push(
+      new StringSelectMenuOptionBuilder()
+        .setLabel("🩹 Heal Damage")
+        .setDescription("Heal 1 health damage box")
+        .setValue(CharacterQuickAction.HealDamage)
+    );
+  }
+
+  options.push(
+    new StringSelectMenuOptionBuilder()
+      .setLabel("✏️ Edit Concept & Ambition (Modal)")
+      .setDescription(
+        "Open a popup form to update your character's biography traits"
+      )
+      .setValue(CharacterQuickAction.OpenBioModal)
+  );
+
+  return options;
+}
+
+/**
+ * Screen Recipe: Interactive Character Editor Dashboard (Trackers Tab).
+ */
+export const CharacterEditorHomeRecipe: ScreenRecipe<
+  CharacterSheetRecipeProps
+> = ({
+  sessionId,
+  character,
+  concept,
+  ambition,
+  bannerText,
+  emitTrackerFollowUp,
+}) => {
+  const quickActionSelect = new StringSelectMenuBuilder()
+    .setCustomId(
+      encodeSessionCustomId(
+        CHARACTER_HANDLER_ID,
+        sessionId,
+        CharacterControl.QuickActionMenu
+      )
+    )
+    .setPlaceholder("⚡ Select an action or editor tool...")
+    .addOptions(buildQuickActionOptions(character));
 
   const quickActionRow =
     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
       quickActionSelect
     );
 
+  const tabBar = SheetTabBarComponent({
+    handlerId: CHARACTER_HANDLER_ID,
+    sessionId,
+    activeTab: CharacterSheetTab.Trackers,
+  });
+
   const trackerButtons = TrackerQuickButtonsComponent({
     handlerId: CHARACTER_HANDLER_ID,
     sessionId,
-    hunger: state.hunger,
-    willpowerMax: state.willpowerMax,
-    willpowerSuperficial: state.willpowerSuperficial,
-    decHungerControl: CharacterControl.DecreaseHunger,
-    incHungerControl: CharacterControl.IncreaseHunger,
-    decWillpowerControl: CharacterControl.DecreaseWillpower,
-    incWillpowerControl: CharacterControl.IncreaseWillpower,
+    character,
   });
 
   return {
@@ -291,22 +265,15 @@ export const CharacterEditorHomeRecipe: ScreenRecipe<
       ephemeral: true,
       body: [
         CharacterIdentityComponent({
-          characterName: state.characterName,
-          splat: state.splat,
-          clan: state.clan,
-          generation: state.generation,
-          concept: state.concept,
-          ambition: state.ambition,
-          bannerText: state.lastActionBanner,
+          characterName: character.name,
+          splat: character.splat,
+          concept: concept ?? "Unwritten Soul",
+          ambition: ambition ?? "Survive the night",
+          bannerText,
         }),
+        tabBar,
         DividerComponent(),
-        CharacterTrackersComponent({
-          hunger: state.hunger,
-          healthMax: state.healthMax,
-          healthSuperficial: state.healthSuperficial,
-          willpowerMax: state.willpowerMax,
-          willpowerSuperficial: state.willpowerSuperficial,
-        }),
+        CharacterTrackersComponent({ character }),
         DividerComponent(),
         trackerButtons,
         quickActionRow,
@@ -316,14 +283,8 @@ export const CharacterEditorHomeRecipe: ScreenRecipe<
       Boolean(emitTrackerFollowUp) && {
         ephemeral: true,
         body: [
-          ActionBannerComponent({ text: state.lastActionBanner }),
-          CharacterTrackersComponent({
-            hunger: state.hunger,
-            healthMax: state.healthMax,
-            healthSuperficial: state.healthSuperficial,
-            willpowerMax: state.willpowerMax,
-            willpowerSuperficial: state.willpowerSuperficial,
-          }),
+          ActionBannerComponent({ text: bannerText }),
+          CharacterTrackersComponent({ character }),
           trackerButtons,
         ],
       },
@@ -332,15 +293,87 @@ export const CharacterEditorHomeRecipe: ScreenRecipe<
 };
 
 /**
+ * Screen Recipe: Interactive Character Traits Tab (Attributes & Skills).
+ */
+export const CharacterTraitsRecipe: ScreenRecipe<CharacterSheetRecipeProps> = ({
+  sessionId,
+  character,
+  concept,
+  ambition,
+  bannerText,
+}) => {
+  const tabBar = SheetTabBarComponent({
+    handlerId: CHARACTER_HANDLER_ID,
+    sessionId,
+    activeTab: CharacterSheetTab.Traits,
+  });
+
+  return {
+    primary: {
+      ephemeral: true,
+      body: [
+        CharacterIdentityComponent({
+          characterName: character.name,
+          splat: character.splat,
+          concept: concept ?? "Unwritten Soul",
+          ambition: ambition ?? "Survive the night",
+          bannerText,
+        }),
+        tabBar,
+        DividerComponent(),
+        CharacterTraitsComponent({ character }),
+      ],
+    },
+  };
+};
+
+/**
+ * Screen Recipe: Character Safe Deletion Confirmation Tab.
+ */
+export const CharacterDeleteConfirmRecipe: ScreenRecipe<
+  CharacterSheetRecipeProps
+> = ({ sessionId, character, concept, ambition, bannerText }) => {
+  const tabBar = SheetTabBarComponent({
+    handlerId: CHARACTER_HANDLER_ID,
+    sessionId,
+    activeTab: CharacterSheetTab.Delete,
+  });
+
+  return {
+    primary: {
+      ephemeral: true,
+      body: [
+        CharacterIdentityComponent({
+          characterName: character.name,
+          splat: character.splat,
+          concept: concept ?? "Unwritten Soul",
+          ambition: ambition ?? "Survive the night",
+          bannerText,
+        }),
+        tabBar,
+        DividerComponent(),
+        TextBlockComponent({
+          content:
+            `# ⚠️ Danger Zone: Delete Character\n\n` +
+            `Are you sure you want to permanently delete **${character.name}**?\n` +
+            `**All sheet data, attributes, and tracker states will be permanently deleted.** This action cannot be undone.`,
+        }),
+        DividerComponent(),
+        ConfirmationBarComponent({
+          handlerId: CHARACTER_HANDLER_ID,
+          sessionId,
+          confirmControl: CharacterControl.DeleteConfirmYes,
+          cancelControl: CharacterControl.DeleteConfirmCancel,
+          confirmLabel: `Permanently Delete "${character.name}"`,
+          cancelLabel: "Cancel",
+        }),
+      ],
+    },
+  };
+};
+
+/**
  * Screen Recipe: Cancelled character creation view.
- *
- * @param props - Character name whose creation was aborted
- * @returns `RenderEnvelope`
- *
- * @example
- * ```typescript
- * renderEngine.build(CharacterCancelledRecipe, { characterName: "Viktor" })
- * ```
  */
 export const CharacterCancelledRecipe: ScreenRecipe<{
   characterName: string;
@@ -354,26 +387,35 @@ export const CharacterCancelledRecipe: ScreenRecipe<{
 });
 
 /**
- * Screen Recipe: Discord Modal popup for editing a character's Concept and Ambition.
- *
- * @param props - Session ID and current character state
- * @returns `RenderEnvelope` of `kind: "modal"`
- *
- * @example
- * ```typescript
- * renderEngine.build(EditCharacterBioModalRecipe, { sessionId, state })
- * ```
+ * Screen Recipe: Confirmed character deletion view.
  */
-export const EditCharacterBioModalRecipe: ScreenRecipe<
-  CharacterSessionRecipeProps
-> = ({ sessionId, state }) => {
+export const CharacterDeletedRecipe: ScreenRecipe<{
+  characterName: string;
+}> = ({ characterName }) => ({
+  primary: {
+    ephemeral: true,
+    body: TextBlockComponent({
+      content: `🗑️ Character **${characterName}** has been permanently deleted.`,
+    }),
+  },
+});
+
+/**
+ * Screen Recipe: Discord Modal popup for editing Concept and Ambition.
+ */
+export const EditCharacterBioModalRecipe: ScreenRecipe<{
+  sessionId: Snowflake;
+  characterName: string;
+  concept?: string;
+  ambition?: string;
+}> = ({ sessionId, characterName, concept, ambition }) => {
   const conceptInput = new TextInputBuilder()
     .setCustomId("concept")
     .setLabel("Character Concept")
     .setStyle(TextInputStyle.Short)
     .setRequired(true)
     .setMaxLength(100)
-    .setValue(state.concept);
+    .setValue(concept ?? "Unwritten Soul");
 
   const ambitionInput = new TextInputBuilder()
     .setCustomId("ambition")
@@ -381,7 +423,7 @@ export const EditCharacterBioModalRecipe: ScreenRecipe<
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(true)
     .setMaxLength(150)
-    .setValue(state.ambition);
+    .setValue(ambition ?? "Survive the night");
 
   const modal = new ModalBuilder()
     .setCustomId(
@@ -391,7 +433,7 @@ export const EditCharacterBioModalRecipe: ScreenRecipe<
         CharacterControl.EditBioModal
       )
     )
-    .setTitle(`Edit ${state.characterName}`)
+    .setTitle(`Edit ${characterName}`)
     .addComponents(
       new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
         conceptInput

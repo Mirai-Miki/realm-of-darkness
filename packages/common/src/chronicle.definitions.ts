@@ -17,6 +17,25 @@ import {
 // ============================================================================
 
 /**
+ * Supported game editions for a chronicle.
+ */
+export const GameEdition = {
+  Fifth: "5th",
+  Twentieth: "20th",
+  Cod: "cod",
+} as const;
+
+/**
+ * Zod schema for validating supported game editions.
+ */
+export const GameEditionSchema = z.enum(GameEdition);
+
+/**
+ * Inferred TypeScript type for game editions.
+ */
+export type GameEdition = z.infer<typeof GameEditionSchema>;
+
+/**
  * Chronicle name with length constraints.
  */
 export const ChronicleNameSchema = z
@@ -42,6 +61,8 @@ export const ChronicleDataSchema = z.object({
   id: SnowflakeSchema,
   name: ChronicleNameSchema,
   iconUrl: ChronicleIconUrlSchema,
+  defaultVersion: GameEditionSchema.default(GameEdition.Fifth),
+  storytellerRoleIds: z.array(SnowflakeSchema).default([]),
   createdAt: z.date(),
   lastUpdated: z.date(),
 });
@@ -56,6 +77,8 @@ export const ChronicleRepositoryInputSchema = z.object({
   id: SnowflakeSchema,
   name: ChronicleNameSchema,
   iconUrl: ChronicleIconUrlSchema.optional(),
+  defaultVersion: GameEditionSchema.optional(),
+  storytellerRoleIds: z.array(SnowflakeSchema).optional(),
 });
 export type ChronicleRepositoryInput = z.infer<
   typeof ChronicleRepositoryInputSchema
@@ -90,6 +113,14 @@ export interface IChronicleRepository {
    * @returns Array of all chronicle IDs
    */
   findAllIds(): Promise<Snowflake[]>;
+
+  /**
+   * Find multiple chronicles by their snowflake IDs.
+   *
+   * @param ids - Array of Chronicle snowflake IDs
+   * @returns Array of found chronicles
+   */
+  findManyByIds(ids: Snowflake[]): Promise<ChronicleData[]>;
 
   /**
    * Create a new chronicle.
