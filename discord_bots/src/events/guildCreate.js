@@ -1,6 +1,6 @@
 "use strict";
 require(`${process.cwd()}/alias`);
-const { Events } = require("discord.js");
+const { Events, GatewayIntentBits } = require("discord.js");
 const setActivity = require("@modules/setActivity");
 const API = require("@api");
 
@@ -10,6 +10,10 @@ module.exports = {
   async execute(guild) {
     await setActivity(guild.client);
     await API.updateGuild(guild);
+
+    if (!guild.client.options.intents.has(GatewayIntentBits.GuildMembers)) {
+      return;
+    }
 
     // Update all existing guild members to create member relations
     try {
