@@ -1,12 +1,12 @@
 # requirements.txt
 # Project dependencies with exact version locking
-Django==5.2.4
-djangorestframework==3.16.0
-channels==4.3.0
-channels-redis==4.2.1
+Django==5.2.19
+djangorestframework==3.16.1
+channels==4.3.2
+channels-redis==4.3.0
 Pillow==11.2.1
-requests==2.32.4
+requests==2.34.2
 redis==6.2.0
-python-dotenv==1.1.1
-pip==25.1.1
+python-dotenv==1.2.4
+pip==25.3
 mysqlclient==2.2.7

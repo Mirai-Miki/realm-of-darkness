@@ -41,7 +41,7 @@ const BOT_CONFIG = {
   cod: {
     token: process.env.TOKEN_COD!,
     name: "Chronicles of Darkness",
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.DirectMessages],
+    intents: [GatewayIntentBits.Guilds],
     commandsPath: "commands/cod",
     componentsPath: "components/cod",
     hasComponents: false,
@@ -51,8 +51,7 @@ const BOT_CONFIG = {
     name: "5th Edition",
     intents: [
       GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMembers,
-      GatewayIntentBits.DirectMessages,
+      GatewayIntentBits.GuildMembers
     ],
     commandsPath: "commands/5th",
     componentsPath: "components/5th",
@@ -63,8 +62,7 @@ const BOT_CONFIG = {
     name: "20th Anniversary Edition",
     intents: [
       GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMembers,
-      GatewayIntentBits.DirectMessages,
+      GatewayIntentBits.GuildMembers
     ],
     commandsPath: "commands/20th",
     componentsPath: "components/20th",
