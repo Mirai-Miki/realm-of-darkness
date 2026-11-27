@@ -49,7 +49,10 @@ const BOT_CONFIG = {
   "5th": {
     token: process.env.TOKEN_5TH!,
     name: "5th Edition",
-    intents: [GatewayIntentBits.Guilds],
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMembers
+    ],
     commandsPath: "commands/5th",
     componentsPath: "components/5th",
     hasComponents: true,
@@ -57,7 +60,10 @@ const BOT_CONFIG = {
   "20th": {
     token: process.env.TOKEN_20TH!,
     name: "20th Anniversary Edition",
-    intents: [GatewayIntentBits.Guilds],
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMembers
+    ],
     commandsPath: "commands/20th",
     componentsPath: "components/20th",
     hasComponents: true,
